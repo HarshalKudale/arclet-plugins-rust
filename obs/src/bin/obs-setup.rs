@@ -17,7 +17,7 @@ fn main() {
             _ => return ctx.fail("Invalid port number"),
         }
 
-        std::fs::write(".env", format!("OBS_HOST={host}\nOBS_PORT={port}\nOBS_PASSWORD={password}\n"))?;
+        std::fs::write(ctx.data_dir().join(".env"), format!("OBS_HOST={host}\nOBS_PORT={port}\nOBS_PASSWORD={password}\n"))?;
         ctx.log(format!("[setup] OBS connection configured: ws://{host}:{port}"));
         Ok(())
     })

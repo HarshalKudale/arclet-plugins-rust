@@ -161,8 +161,11 @@ fn main() {
         .on_ready(|rt| {
             let _ = RUNTIME.set(rt.clone());
             log("Zoom plugin ready — starting status poller");
-            std::thread::spawn(|| loop {
-                poll();
+            let rt = rt.clone();
+            std::thread::spawn(move || loop {
+                if rt.has_instances() {
+                    poll();
+                }
                 std::thread::sleep(POLL_INTERVAL);
             });
             Ok(())

@@ -146,7 +146,7 @@ fn connect_inner() {
     log(format!("connecting to Discord RPC (token: {})", if token.is_some() { "yes" } else { "no" }));
     let Some(token) = token else {
         log("no stored RPC token — setup required");
-        arclet_sdk::mark_setup_required();
+        arclet_sdk::mark_setup_required("Sign in to Discord");
         std::process::exit(1);
     };
 
@@ -157,7 +157,7 @@ fn connect_inner() {
             // Discord returned a numeric error code — token is bad (revoked, invalid, wrong scopes).
             log(format!("RPC auth error (code {code}): {message} — setup required"));
             clear_token();
-            arclet_sdk::mark_setup_required();
+            arclet_sdk::mark_setup_required("Discord sign-in expired");
             std::process::exit(1);
         }
         Err(e) => {

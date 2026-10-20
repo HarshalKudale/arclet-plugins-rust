@@ -43,7 +43,11 @@ fn execute_idea_action(action_id: &str, inputs: &Value) -> Result {
     }
     match req.call() {
         Ok(_) => Ok(()),
-        Err(ureq::Error::Status(403 | 500, _)) => Err(Error::msg("IntelliJ companion plugin rejected the configured password.")),
+        Err(ureq::Error::Status(403, _)) => {
+            arclet_sdk::mark_setup_required("The IntelliJ companion rejected the password");
+            Err(Error::msg("IntelliJ companion plugin rejected the configured password."))
+        }
+        Err(ureq::Error::Status(500, _)) => Err(Error::msg("IntelliJ companion plugin rejected the configured password.")),
         Err(ureq::Error::Status(code, _)) => Err(Error::msg(format!("IntelliJ companion plugin returned HTTP {code}."))),
         Err(e) => Err(Error::msg(format!("IntelliJ companion plugin is not reachable on port {port}. ({e})"))),
     }

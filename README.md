@@ -36,7 +36,7 @@ All crates share one Cargo workspace (`cargo build --workspace`, one `target/`).
 ## Differences from the JS plugins
 
 - **No bundling / no Node runtime.** Each plugin ships as a native `.exe` (plus a `<id>-setup.exe` for plugins with setup); the manifest has no `runtime.language`.
-- **Config files.** Setup writes `.env` into the plugin folder and the plugin reads it at start-up (`load_env()`), as before. The JS build *inlined* `.env` into the bundle; Rust does not — except Discord, whose `build.rs` bakes `DISCORD_CLIENT_ID` / `DISCORD_CLIENT_SECRET` from `.env` at compile time so a shipped setup binary still works.
+- **Config and credentials.** Setup writes `.env` (and Discord its token) into the plugin data folder (`%APPDATA%/Arclet/plugin-data/<id>/`, via `ctx.data_dir()`), which survives updates and reinstalls; the plugin reads it at start-up (`load_env()`, which also moves a `.env` left in the plugin folder by an older version). On an auth failure a plugin calls `mark_setup_required(reason)` and Arclet asks the user to run setup again. Discord never ships its client secret: `discord-setup` sends the authorization code to the Arclet website (`ARCLET_DISCORD_TOKEN_URL`, baked in from `.env` by `build.rs` or set at runtime), which performs the token exchange.
 - **OBS** subscribes to the non-high-volume event set (no input-volume-meter spam, which the plugin never used).
 - **Discord**: `auth.js` / `oauth.js` / `test/` in the JS plugin are not used by `plugin.js` and were not ported; the setup flow (native AUTHORIZE popup → token exchange) lives in `discord-setup`.
 - **Browser plugin** reads bookmarks/history from a *copy* of the browser's SQLite file (bundled SQLite via `rusqlite`), because running browsers lock the original.

@@ -115,6 +115,12 @@ pub fn run(host: String, port: String, password: String, on_connected: fn(), on_
                 log("OBS: disconnected");
                 on_closed();
             }
+            Err(e) if e.contains("password") => {
+                // Retrying can't fix a bad password; the host stops us and asks for setup.
+                log(format!("OBS: {e}"));
+                arclet_sdk::mark_setup_required(e);
+                return;
+            }
             Err(e) => log(format!("OBS: connect error: {e}")),
         }
         let delay = RECONNECT_DELAYS_MS[attempt.min(RECONNECT_DELAYS_MS.len() - 1)];

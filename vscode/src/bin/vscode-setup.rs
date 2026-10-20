@@ -35,7 +35,7 @@ fn main() {
             }
         }
 
-        std::fs::write(".env", format!("VSCODE_HOST={host}
+        std::fs::write(ctx.data_dir().join(".env"), format!("VSCODE_HOST={host}
 VSCODE_PORT={port}
 VSCODE_PASSWORD={password}
 "))?;

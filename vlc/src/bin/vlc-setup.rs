@@ -42,7 +42,7 @@ fn main() {
             }
         }
 
-        std::fs::write(".env", format!("VLC_HOST={host}\nVLC_PORT={port}\nVLC_PASSWORD={password}\n"))?;
+        std::fs::write(ctx.data_dir().join(".env"), format!("VLC_HOST={host}\nVLC_PORT={port}\nVLC_PASSWORD={password}\n"))?;
         ctx.log(format!("[setup] VLC HTTP configured: {base}"));
         Ok(())
     })

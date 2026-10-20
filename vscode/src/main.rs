@@ -48,7 +48,10 @@ fn get(path: &str, inputs: &Value, params: &[(&str, &str)]) -> Result<ureq::Resp
     }
     match req.call() {
         Ok(r) => Ok(r),
-        Err(ureq::Error::Status(401 | 403, _)) => Err(Error::msg(format!("{NAME} rejected the configured password."))),
+        Err(ureq::Error::Status(401 | 403, _)) => {
+            arclet_sdk::mark_setup_required(format!("{NAME} rejected the password"));
+            Err(Error::msg(format!("{NAME} rejected the configured password.")))
+        }
         Err(ureq::Error::Status(code, r)) => {
             let detail = r.into_json::<Value>().ok().and_then(|b| b["error"].as_str().map(|e| format!(" {e}"))).unwrap_or_default();
             Err(Error::msg(format!("{NAME} returned HTTP {code}.{detail}")))

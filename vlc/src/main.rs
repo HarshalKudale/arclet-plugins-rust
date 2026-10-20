@@ -39,7 +39,10 @@ fn vlc_request(command: Option<&str>, params: &[(&str, &str)]) -> Result<Value> 
     }
     match req.call() {
         Ok(r) => r.into_json().map_err(|e| Error::msg(format!("VLC returned invalid JSON: {e}"))),
-        Err(ureq::Error::Status(401, _)) => Err(Error::msg("VLC rejected the configured HTTP password.")),
+        Err(ureq::Error::Status(401, _)) => {
+            arclet_sdk::mark_setup_required("VLC rejected the HTTP password");
+            Err(Error::msg("VLC rejected the configured HTTP password."))
+        }
         Err(ureq::Error::Status(code, _)) => Err(Error::msg(format!("VLC returned HTTP {code}."))),
         Err(e) => Err(Error::msg(format!("VLC is not reachable at {base}. ({e})"))),
     }
@@ -124,8 +127,11 @@ fn main() {
         .on_ready(|rt| {
             let _ = RUNTIME.set(rt.clone());
             log(format!("VLC plugin ready — polling {}", base()));
-            std::thread::spawn(|| loop {
-                poll_status();
+            let rt = rt.clone();
+            std::thread::spawn(move || loop {
+                if rt.has_instances() {
+                    poll_status();
+                }
                 std::thread::sleep(POLL_INTERVAL);
             });
             Ok(())

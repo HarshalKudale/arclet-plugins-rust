@@ -1,6 +1,7 @@
 //! Discord first-time setup: authorize through the Discord desktop client (native
-//! popup, no browser), exchange the code for an access token, and save it to
-//! `discord-rpc-token.json` so the plugin can connect without re-prompting.
+//! popup, no browser), exchange the code for an access token through the Arclet
+//! website (which holds the client secret), and save it to
+//! `discord-rpc-token.json` in the plugin data folder.
 
 #[path = "../common.rs"]
 mod common;
@@ -12,12 +13,10 @@ use std::time::Duration;
 
 fn main() {
     arclet_sdk::run_setup(|ctx| {
-        let (client_id, secret) = (common::client_id(), common::client_secret());
-        if secret.is_empty() || secret == "your_client_secret_here" {
-            return ctx.fail(
-                "DISCORD_CLIENT_SECRET is not configured.\nEdit the plugin's .env and set your Discord application client secret,\nthen re-run setup.",
-            );
-        }
+        let client_id = common::client_id();
+        let Some(token_url) = common::token_url() else {
+            return ctx.fail("ARCLET_DISCORD_TOKEN_URL is not configured for this build of the Discord plugin.");
+        };
 
         ctx.log("[setup] Connecting to Discord RPC...");
         ctx.log("[setup] An authorization popup will appear inside the Discord client.");
@@ -30,21 +29,15 @@ fn main() {
             .map(String::from)
             .ok_or_else(|| Error::msg("Discord AUTHORIZE returned no code — did the user deny the request?"))?;
 
-        let token: Value = ureq::post("https://discord.com/api/oauth2/token")
+        let token: Value = ureq::post(&token_url)
             .timeout(Duration::from_secs(15))
-            .send_form(&[
-                ("client_id", client_id.as_str()),
-                ("client_secret", secret.as_str()),
-                ("code", code.as_str()),
-                ("grant_type", "authorization_code"),
-                ("redirect_uri", "http://127.0.0.1:31416/callback"),
-            ])
+            .send_json(json!({"code": code}))
             .map_err(|e| Error::msg(format!("Discord token exchange failed: {e}")))?
             .into_json()?;
         let access = token["access_token"].as_str().ok_or_else(|| Error::msg("Discord token exchange returned no access_token"))?;
 
         rpc.authenticate(access).map_err(|e| Error::msg(e.message))?;
-        std::fs::write(common::TOKEN_FILE, serde_json_pretty(&json!({"access_token": access})))?;
+        std::fs::write(common::token_path(), serde_json_pretty(&json!({"access_token": access})))?;
         ctx.log("[setup] Discord RPC authorized — token saved.");
         rpc.close();
         ctx.log("[setup] Setup complete! The Discord plugin will start now.");

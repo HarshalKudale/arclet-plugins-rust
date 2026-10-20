@@ -35,7 +35,7 @@ fn main() {
             }
         }
 
-        std::fs::write(".env", format!("IDEA_HOST={host}
+        std::fs::write(ctx.data_dir().join(".env"), format!("IDEA_HOST={host}
 IDEA_PORT={port}
 IDEA_PASSWORD={password}
 "))?;

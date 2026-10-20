@@ -74,9 +74,11 @@ mod conn {
     }
 
     /// Synchronous pipe handles serialise I/O, so a blocked ReadFile would stall
-    /// every write. Only read once PeekNamedPipe reports bytes are waiting.
+    /// every write. Only read once PeekNamedPipe reports bytes are waiting;
+    /// poll every 5 ms at first, backing off to 50 ms while the pipe is idle.
     impl Read for Conn {
         fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+            let mut idle_polls = 0u32;
             loop {
                 let mut avail = 0u32;
                 let ok = unsafe { PeekNamedPipe(self.0.as_raw_handle() as *mut _, std::ptr::null_mut(), 0, std::ptr::null_mut(), &mut avail, std::ptr::null_mut()) };
@@ -87,7 +89,9 @@ mod conn {
                     let n = (avail as usize).min(buf.len());
                     return self.0.read(&mut buf[..n]);
                 }
-                std::thread::sleep(std::time::Duration::from_millis(5));
+                idle_polls += 1;
+                let ms = if idle_polls < 20 { 5 } else { 50 };
+                std::thread::sleep(std::time::Duration::from_millis(ms));
             }
         }
     }
