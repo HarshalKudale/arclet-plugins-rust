@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools"]
+
+[workspace.dependencies]
+arclet-sdk = { path = "../arclet-sdk-rust" }
+ureq = { version = "2", features = ["json"] }
+base64 = "0.22"
+serde_json = "1"
+tungstenite = { version = "0.24", default-features = false, features = ["handshake"] }
+sha2 = "0.10"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

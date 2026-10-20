@@ -1,0 +1,11 @@
+[package]
+name = "obs"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+arclet-sdk.workspace = true
+base64.workspace = true
+sha2.workspace = true
+tungstenite.workspace = true

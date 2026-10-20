@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VLC Setup</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101319;
+      --panel: #181d26;
+      --border: #2b3342;
+      --text: #f4f6f8;
+      --muted: #a1a8b5;
+      --accent: #f97316;
+      --accent-hover: #ea580c;
+      --danger: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, Segoe UI, system-ui, sans-serif;
+    }
+    .card {
+      width: min(420px, calc(100vw - 32px));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+      padding: 22px;
+    }
+    h1 { margin: 0 0 8px; font-size: 18px; }
+    p { margin: 0 0 14px; color: var(--muted); }
+    .steps {
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .steps b { color: var(--text); }
+    .grid { display: grid; gap: 12px; }
+    .row { display: grid; grid-template-columns: 1fr 120px; gap: 12px; }
+    label { display: grid; gap: 6px; font-weight: 600; }
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 12px;
+      background: #212734;
+      color: var(--text);
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: white;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:disabled { opacity: 0.7; cursor: wait; }
+    .status { min-height: 18px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+    .status.error { color: var(--danger); }
+    @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <form class="card" id="setup-form">
+    <h1>VLC Setup</h1>
+    <p>Connect Arclet to VLC’s built-in HTTP interface.</p>
+    <div class="steps">
+      <b>Before saving:</b> in VLC open <b>Tools → Preferences → Show Settings: All → Interface → Main interfaces</b>, enable <b>Web</b>, then set a password under <b>Main interfaces → Lua → Lua HTTP</b>.
+    </div>
+    <div class="grid">
+      <div class="row">
+        <label>
+          Host
+          <input id="host" type="text" value="127.0.0.1" autocomplete="off">
+        </label>
+        <label>
+          Port
+          <input id="port" type="number" value="8080" min="1" max="65535" autocomplete="off">
+        </label>
+      </div>
+      <label>
+        Password
+        <input id="password" type="password" placeholder="VLC HTTP password" autocomplete="off">
+      </label>
+      <button id="save-btn" type="submit">Save VLC Setup</button>
+      <div id="status" class="status"></div>
+    </div>
+  </form>
+  <script>
+    const form = document.getElementById('setup-form');
+    const host = document.getElementById('host');
+    const port = document.getElementById('port');
+    const password = document.getElementById('password');
+    const button = document.getElementById('save-btn');
+    const status = document.getElementById('status');
+
+    function setStatus(text, kind = '') {
+      status.textContent = text;
+      status.className = `status ${kind}`.trim();
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      button.disabled = true;
+      setStatus('Verifying VLC connection...');
+      window.parent.postMessage({
+        source: 'arclet-setup-page',
+        type: 'setup-submit',
+        values: {
+          host: host.value.trim(),
+          port: port.value.trim(),
+          password: password.value,
+        },
+      }, '*');
+    });
+
+    window.addEventListener('message', (event) => {
+      const data = event && event.data;
+      if (!data || data.source !== 'arclet-host') return;
+      if (data.type === 'setup-complete') {
+        setStatus('VLC setup saved.');
+        button.disabled = false;
+      } else if (data.type === 'setup-failed') {
+        setStatus(data.message || 'Setup failed.', 'error');
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

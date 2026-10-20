@@ -1,0 +1,11 @@
+[package]
+name = "discord"
+version = "1.0.0"
+edition = "2021"
+publish = false
+build = "build.rs"
+
+[dependencies]
+arclet-sdk.workspace = true
+ureq.workspace = true
+serde_json.workspace = true

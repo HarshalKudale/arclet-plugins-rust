@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Discord Setup</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1117;
+      --panel: #171b24;
+      --border: #283042;
+      --text: #f3f4f6;
+      --muted: #9aa3b2;
+      --accent: #5865f2;
+      --accent-hover: #4752c4;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, Segoe UI, system-ui, sans-serif;
+    }
+
+    .card {
+      width: min(320px, calc(100vw - 32px));
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    p {
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font: inherit;
+      font-weight: 600;
+      color: white;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--accent-hover); }
+    button:disabled { opacity: 0.7; cursor: wait; }
+
+    .status {
+      min-height: 20px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status.error { color: #f87171; }
+    .status.success { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Discord Setup</h1>
+    <p>Authorize Arclet with your Discord desktop client.</p>
+    <button id="auth-btn" type="button">Authorize Discord</button>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const button = document.getElementById('auth-btn');
+    const status = document.getElementById('status');
+
+    function setStatus(text, kind = '') {
+      status.textContent = text;
+      status.className = `status ${kind}`.trim();
+    }
+
+    button.addEventListener('click', () => {
+      button.disabled = true;
+      setStatus('Waiting for Discord authorization...');
+      window.parent.postMessage({ source: 'arclet-setup-page', type: 'setup-submit', values: {} }, '*');
+    });
+
+    window.addEventListener('message', (event) => {
+      const data = event && event.data;
+      if (!data || data.source !== 'arclet-host') return;
+      if (data.type === 'setup-complete') {
+        setStatus('Discord authorized.', 'success');
+        button.disabled = false;
+      } else if (data.type === 'setup-failed') {
+        setStatus(data.message || 'Setup failed.', 'error');
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
