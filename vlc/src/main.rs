@@ -138,11 +138,11 @@ fn main() {
         })
         .action(
             Action::toggle("playback-status", "Playback Status")
-                .icon("▶")
-                .state("offline", "Offline", "⚠")
-                .state("stopped", "Stopped", "⏹")
-                .state("paused", "Paused", "⏸")
-                .state("playing", "Playing", "▶")
+                .icon("play")
+                .state("offline", "Offline", "triangle-alert")
+                .state("stopped", "Stopped", "square")
+                .state("paused", "Paused", "pause")
+                .state("playing", "Playing", "play")
                 .initial("offline")
                 .on_press(|ctx| {
                     poll_status();
@@ -153,10 +153,10 @@ fn main() {
         )
         .action(
             Action::toggle("play-pause", "Play / Pause")
-                .icon("⏯")
-                .state("stopped", "Stopped", "⏯")
-                .state("paused", "Paused", "⏸")
-                .state("playing", "Playing", "▶")
+                .icon("play")
+                .state("stopped", "Stopped", "play")
+                .state("paused", "Paused", "pause")
+                .state("playing", "Playing", "play")
                 .initial("stopped")
                 .on_press(|ctx| {
                     require_reachable(ctx)?;
@@ -165,14 +165,14 @@ fn main() {
                     Ok(())
                 }),
         )
-        .action(command_button("stop", "Stop", "⏹", "pl_stop", &[]))
-        .action(command_button("next", "Next", "⏭", "pl_next", &[]))
-        .action(command_button("previous", "Previous", "⏮", "pl_previous", &[]))
+        .action(command_button("stop", "Stop", "square", "pl_stop", &[]))
+        .action(command_button("next", "Next", "skip-forward", "pl_next", &[]))
+        .action(command_button("previous", "Previous", "skip-back", "pl_previous", &[]))
         .action(
             Action::toggle("fullscreen", "Fullscreen")
-                .icon("⛶")
-                .state("off", "Windowed", "▣")
-                .state("on", "Fullscreen", "⛶")
+                .icon("maximize")
+                .state("off", "Windowed", "square")
+                .state("on", "Fullscreen", "maximize")
                 .initial("off")
                 .on_press(|ctx| {
                     require_reachable(ctx)?;
@@ -181,13 +181,13 @@ fn main() {
                     Ok(())
                 }),
         )
-        .action(command_button("seek-backward", "Seek Back 10s", "⏪", "seek", &[("val", "-10S")]))
-        .action(command_button("seek-forward", "Seek Forward 10s", "⏩", "seek", &[("val", "+10S")]))
-        .action(command_button("volume-down", "Volume Down", "🔉", "volume", &[("val", "-20")]))
-        .action(command_button("volume-up", "Volume Up", "🔊", "volume", &[("val", "+20")]))
+        .action(command_button("seek-backward", "Seek Back 10s", "rewind", "seek", &[("val", "-10S")]))
+        .action(command_button("seek-forward", "Seek Forward 10s", "fast-forward", "seek", &[("val", "+10S")]))
+        .action(command_button("volume-down", "Volume Down", "volume-1", "volume", &[("val", "-20")]))
+        .action(command_button("volume-up", "Volume Up", "volume-2", "volume", &[("val", "+20")]))
         .action(
             Action::button("open-url", "Open Stream / URL")
-                .icon("🔗")
+                .icon("link")
                 .inputs(vec![input::text("url", "Media URL").placeholder("https://example.com/video.mp4")])
                 .on_press(|ctx| {
                     require_reachable(ctx)?;

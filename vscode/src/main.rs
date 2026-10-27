@@ -110,22 +110,22 @@ fn option_wheel(id: &str, label: &str, icon: &'static str, query: &'static str, 
 
 // (id, label, commandId, icon) — the category column of the JS table is not emitted to actions.json.
 const SIMPLE: &[(&str, &str, &str, &str)] = &[
-    ("command-palette", "Command Palette", "vscode.openCommandPalette", "🧭"),
-    ("quick-open", "Quick Open", "vscode.quickOpen", "🔎"),
-    ("explorer", "Explorer", "vscode.explorer", "📁"),
-    ("search", "Search", "vscode.search", "🔍"),
-    ("source-control", "Source Control", "vscode.sourceControl", "🌿"),
-    ("extensions", "Extensions", "vscode.extensions", "🧩"),
-    ("terminal", "Toggle Terminal", "vscode.toggleTerminal", "⌨"),
-    ("problems", "Problems", "vscode.problems", "⚠"),
-    ("save-all", "Save All", "vscode.saveAll", "💾"),
-    ("format-document", "Format Document", "vscode.formatDocument", "🪄"),
-    ("toggle-sidebar", "Toggle Sidebar", "vscode.toggleSidebar", "📚"),
-    ("toggle-panel", "Toggle Panel", "vscode.togglePanel", "🧱"),
-    ("zen-mode", "Zen Mode", "vscode.zenMode", "🧘"),
-    ("split-editor", "Split Editor", "vscode.splitEditor", "🪟"),
-    ("new-terminal", "New Terminal", "vscode.newTerminal", "➕"),
-    ("stop-debugging", "Stop Debugging", "vscode.stopDebugging", "⏹"),
+    ("command-palette", "Command Palette", "vscode.openCommandPalette", "compass"),
+    ("quick-open", "Quick Open", "vscode.quickOpen", "search"),
+    ("explorer", "Explorer", "vscode.explorer", "folder"),
+    ("search", "Search", "vscode.search", "search"),
+    ("source-control", "Source Control", "vscode.sourceControl", "git-branch"),
+    ("extensions", "Extensions", "vscode.extensions", "puzzle"),
+    ("terminal", "Toggle Terminal", "vscode.toggleTerminal", "terminal"),
+    ("problems", "Problems", "vscode.problems", "triangle-alert"),
+    ("save-all", "Save All", "vscode.saveAll", "save-all"),
+    ("format-document", "Format Document", "vscode.formatDocument", "wand-sparkles"),
+    ("toggle-sidebar", "Toggle Sidebar", "vscode.toggleSidebar", "panel-left"),
+    ("toggle-panel", "Toggle Panel", "vscode.togglePanel", "blocks"),
+    ("zen-mode", "Zen Mode", "vscode.zenMode", "scan"),
+    ("split-editor", "Split Editor", "vscode.splitEditor", "columns-2"),
+    ("new-terminal", "New Terminal", "vscode.newTerminal", "plus"),
+    ("stop-debugging", "Stop Debugging", "vscode.stopDebugging", "square"),
 ];
 
 fn main() {
@@ -134,7 +134,7 @@ fn main() {
         .version("1.0.0")
         .author("Arclet")
         .description("Control Visual Studio Code through the Arclet VS Code companion extension.")
-        .icon("icon:thesvg/visual-studio-code")
+        .icon("vscode-logo.svg")
         .ack_timeout_ms(5000)
         .setup("vscode-setup", Some("setup.html"));
 
@@ -145,21 +145,21 @@ fn main() {
     }
 
     plugin
-        .action(picker_button("run-task", "Run Task", "▶", "taskName", "Task", "vscode-get-tasks", "Task", "vscode.runTask", "name"))
-        .action(picker_button("start-debugging", "Start Debugging", "🐞", "configName", "Launch Configuration", "vscode-get-launch-configs", "Launch configuration", "vscode.startDebugging", "name"))
-        .action(picker_button("focus-terminal", "Focus Terminal", "📟", "terminalName", "Terminal", "vscode-get-terminals", "Terminal", "vscode.focusTerminal", "name"))
-        .action(picker_button("open-editor", "Open Editor", "📄", "editorUri", "Open Editor", "vscode-get-open-editors", "Editor", "vscode.openEditor", "uri"))
+        .action(picker_button("run-task", "Run Task", "play", "taskName", "Task", "vscode-get-tasks", "Task", "vscode.runTask", "name"))
+        .action(picker_button("start-debugging", "Start Debugging", "bug", "configName", "Launch Configuration", "vscode-get-launch-configs", "Launch configuration", "vscode.startDebugging", "name"))
+        .action(picker_button("focus-terminal", "Focus Terminal", "square-terminal", "terminalName", "Terminal", "vscode-get-terminals", "Terminal", "vscode.focusTerminal", "name"))
+        .action(picker_button("open-editor", "Open Editor", "file", "editorUri", "Open Editor", "vscode-get-open-editors", "Editor", "vscode.openEditor", "uri"))
         .action({
             let mut inputs = vec![input::text("commandId", "Command ID").placeholder("workbench.action.tasks.runTask")];
             inputs.extend(base_inputs());
-            Action::button("custom-command", "Custom Command").icon("✨").inputs(inputs).on_press(|ctx| {
+            Action::button("custom-command", "Custom Command").icon("sparkles").inputs(inputs).on_press(|ctx| {
                 let command = require(ctx, "commandId", "Command ID")?;
                 execute_command(&command, &ctx.inputs, &[])
             })
         })
-        .action(option_wheel("task-wheel", "Task Wheel", "▶", "tasks", "No VS Code tasks are available.", "vscode.runTask", "name"))
-        .action(option_wheel("debug-wheel", "Debug Wheel", "🐞", "launch-configs", "No VS Code launch configurations are available.", "vscode.startDebugging", "name"))
-        .action(option_wheel("open-editor-wheel", "Open Editor Wheel", "📄", "open-editors", "No open editors are available.", "vscode.openEditor", "uri"))
+        .action(option_wheel("task-wheel", "Task Wheel", "play", "tasks", "No VS Code tasks are available.", "vscode.runTask", "name"))
+        .action(option_wheel("debug-wheel", "Debug Wheel", "bug", "launch-configs", "No VS Code launch configurations are available.", "vscode.startDebugging", "name"))
+        .action(option_wheel("open-editor-wheel", "Open Editor Wheel", "file", "open-editors", "No open editors are available.", "vscode.openEditor", "uri"))
         .query("vscode-get-tasks", |ctx| Ok(Value::Array(fetch_options("tasks", &ctx.inputs)?)))
         .query("vscode-get-launch-configs", |ctx| Ok(Value::Array(fetch_options("launch-configs", &ctx.inputs)?)))
         .query("vscode-get-terminals", |ctx| Ok(Value::Array(fetch_options("terminals", &ctx.inputs)?)))

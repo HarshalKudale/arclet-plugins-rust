@@ -183,7 +183,7 @@ mod app {
             .map(|(i, w)| {
                 let child = format!("w{i}");
                 map.insert(child.clone(), w.hwnd);
-                let icon = win32::process_exe_path(w.pid).and_then(|p| winicon::extract_exe_icon_data_uri(&p)).unwrap_or_else(|| "🪟".into());
+                let icon = win32::process_exe_path(w.pid).and_then(|p| winicon::extract_exe_icon_data_uri(&p)).unwrap_or_else(|| "columns-2".into());
                 let label = if !w.title.is_empty() { w.title.clone() } else { w.exe_name.clone().unwrap_or_else(|| "Untitled".into()) };
                 json!({"id": child, "label": label, "icon": icon})
             })
@@ -242,7 +242,7 @@ mod app {
             .version("1.0.0")
             .author("Arclet")
             .description("Advanced window management: snap, resize, transparency, always-on-top, per-app volume, and more.")
-            .icon("icon:lucide/app-window")
+            .icon("app-window")
             // Several actions derive their state from the currently focused window.
             .subscribe(&["focus_changed"])
             // ── Queries ──
@@ -283,10 +283,10 @@ mod app {
             .action(window_button("bring-to-front", "Bring to Front", "front.svg", win32::bring_to_front))
             .action(window_button("send-to-back", "Send to Back", "back.svg", win32::send_to_back))
             // ── Toggles ──
-            .action(window_toggle("toggle-always-on-top", "Always on Top", "topmost.svg", [("off", "Normal", "○"), ("on", "Always on Top", "📌")], win32::always_on_top_state, |_| win32::toggle_always_on_top(None)))
-            .action(window_toggle("toggle-borderless", "Toggle Borderless", "borderless.svg", [("bordered", "Bordered", "▣"), ("borderless", "Borderless", "▢")], win32::borderless_state, |_| win32::toggle_borderless(None)))
+            .action(window_toggle("toggle-always-on-top", "Always on Top", "topmost.svg", [("off", "Normal", "circle"), ("on", "Always on Top", "pin")], win32::always_on_top_state, |_| win32::toggle_always_on_top(None)))
+            .action(window_toggle("toggle-borderless", "Toggle Borderless", "borderless.svg", [("bordered", "Bordered", "square"), ("borderless", "Borderless", "square-dashed")], win32::borderless_state, |_| win32::toggle_borderless(None)))
             .action(
-                window_toggle("toggle-transparency", "Toggle Transparency", "transparent.svg", [("opaque", "Opaque", "◼"), ("transparent", "Transparent", "◻")], win32::transparency_state, |ctx| {
+                window_toggle("toggle-transparency", "Toggle Transparency", "transparent.svg", [("opaque", "Opaque", "square"), ("transparent", "Transparent", "square-dashed")], win32::transparency_state, |ctx| {
                     win32::toggle_transparency(alpha_from_opacity(&ctx.inputs), None)
                 })
                 .inputs(vec![transparency_opacity_input()]),
@@ -300,8 +300,8 @@ mod app {
                     }
                 }
             }))
-            .action(window_toggle("toggle-click-through", "Toggle Click-Through", "clickthrough.svg", [("normal", "Normal", "⬚"), ("clickthrough", "Click-Through", "⬜")], win32::click_through_state, |_| win32::toggle_click_through(None)))
-            .action(window_toggle("toggle-max-restore", "Maximize / Restore", "maxrestore.svg", [("normal", "Windowed", "⊡"), ("maximized", "Maximized", "⊞")], win32::maximize_restore_state, |_| win32::toggle_maximize_restore(None)))
+            .action(window_toggle("toggle-click-through", "Toggle Click-Through", "clickthrough.svg", [("normal", "Normal", "mouse-pointer-2"), ("clickthrough", "Click-Through", "mouse-pointer-ban")], win32::click_through_state, |_| win32::toggle_click_through(None)))
+            .action(window_toggle("toggle-max-restore", "Maximize / Restore", "maxrestore.svg", [("normal", "Windowed", "minimize-2"), ("maximized", "Maximized", "maximize-2")], win32::maximize_restore_state, |_| win32::toggle_maximize_restore(None)))
             // ── Audio (per-app volume) ──
             .action(
                 Action::button("set-app-volume", "Set App Volume")
@@ -338,8 +338,8 @@ mod app {
                     .icon("mute.svg")
                     .volatile()
                     .inputs(vec![app_select_input()])
-                    .state("unmuted", "Unmuted", "🔊")
-                    .state("muted", "Muted", "🔇")
+                    .state("unmuted", "Unmuted", "volume-2")
+                    .state("muted", "Muted", "volume-x")
                     .initial_with(|ic| {
                         let muted = resolve_app_exe(&ic.inputs).ok().and_then(|exe| audio::app_mute(&exe).ok().flatten()).unwrap_or(false);
                         Some((if muted { "muted" } else { "unmuted" }).into())
@@ -482,11 +482,11 @@ mod app {
                     .map(|(i, it)| {
                         let child = format!("c{i}");
                         map.insert(child.clone(), it.id.clone());
-                        // Image entries carry their own thumbnail data URI; wheel slices can only use icon:/data: refs.
+                        // Image entries carry their own thumbnail data URI; wheel slices can only use Lucide names or data: URIs.
                         let icon = match (it.kind, &it.icon) {
                             ("image", Some(uri)) => uri.clone(),
-                            ("files", _) => "📁".into(),
-                            _ => "📋".into(),
+                            ("files", _) => "folder".into(),
+                            _ => "clipboard".into(),
                         };
                         json!({"id": child, "label": it.label, "icon": icon})
                     })

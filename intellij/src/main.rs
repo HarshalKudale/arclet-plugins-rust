@@ -62,23 +62,23 @@ enum Kind {
 
 // (id, label, IDE actionId, icon, kind)
 const ACTIONS: &[(&str, &str, &str, &str, Kind)] = &[
-    ("open-action-browser", "Open Action Browser", "streamdeck.show.action.browser", "🧭", Kind::Plain),
-    ("custom-action", "Customized Action", "", "✨", Kind::Custom),
-    ("update-project", "Update Project", "Vcs.UpdateProject", "⬇", Kind::Plain),
-    ("new-project", "New Project", "NewProject", "🆕", Kind::Plain),
-    ("run", "Run", "Run", "▶", Kind::RunConfig),
-    ("debug", "Debug", "Debug", "🐞", Kind::RunConfig),
-    ("step-over", "Step Over", "StepOver", "⤼", Kind::Plain),
-    ("step-into", "Step Into", "StepInto", "↘", Kind::Plain),
-    ("step-out", "Step Out", "StepOut", "↗", Kind::Plain),
-    ("resume", "Resume", "Resume", "⏵", Kind::Plain),
-    ("pause", "Pause", "Pause", "⏸", Kind::Plain),
-    ("search-everywhere", "Search Everywhere", "SearchEverywhere", "🔎", Kind::Plain),
-    ("stop", "Stop", "Stop", "⏹", Kind::Plain),
-    ("project-structure", "Project Structure", "ShowProjectStructureSettings", "🧱", Kind::Plain),
-    ("reset-frame", "Reset Frame", "Debugger.PopFrame", "↺", Kind::Plain),
-    ("terminal", "Terminal", "ActivateTerminalToolWindow", "⌨", Kind::Plain),
-    ("claude-code", "Claude Code", "com.anthropic.code.plugin.actions.OpenClaudeInTerminalAction", "🤖", Kind::Plain),
+    ("open-action-browser", "Open Action Browser", "streamdeck.show.action.browser", "compass", Kind::Plain),
+    ("custom-action", "Customized Action", "", "sparkles", Kind::Custom),
+    ("update-project", "Update Project", "Vcs.UpdateProject", "arrow-down-to-line", Kind::Plain),
+    ("new-project", "New Project", "NewProject", "folder-plus", Kind::Plain),
+    ("run", "Run", "Run", "play", Kind::RunConfig),
+    ("debug", "Debug", "Debug", "bug", Kind::RunConfig),
+    ("step-over", "Step Over", "StepOver", "redo", Kind::Plain),
+    ("step-into", "Step Into", "StepInto", "arrow-down-right", Kind::Plain),
+    ("step-out", "Step Out", "StepOut", "arrow-up-right", Kind::Plain),
+    ("resume", "Resume", "Resume", "play", Kind::Plain),
+    ("pause", "Pause", "Pause", "pause", Kind::Plain),
+    ("search-everywhere", "Search Everywhere", "SearchEverywhere", "search", Kind::Plain),
+    ("stop", "Stop", "Stop", "square", Kind::Plain),
+    ("project-structure", "Project Structure", "ShowProjectStructureSettings", "blocks", Kind::Plain),
+    ("reset-frame", "Reset Frame", "Debugger.PopFrame", "rotate-ccw", Kind::Plain),
+    ("terminal", "Terminal", "ActivateTerminalToolWindow", "terminal", Kind::Plain),
+    ("claude-code", "Claude Code", "com.anthropic.code.plugin.actions.OpenClaudeInTerminalAction", "bot", Kind::Plain),
 ];
 
 fn main() {
@@ -87,7 +87,7 @@ fn main() {
         .version("1.0.0")
         .author("Arclet")
         .description("Control IntelliJ IDEs through the Arclet IntelliJ companion plugin.")
-        .icon("icon:thesvg/intellij-idea")
+        .icon("intellij-logo.svg")
         .ack_timeout_ms(5000)
         .setup("intellij-setup", Some("setup.html"));
 

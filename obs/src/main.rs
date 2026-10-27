@@ -292,7 +292,7 @@ fn main() {
         .version("1.0.0")
         .author("Arclet")
         .description("Control OBS Studio — record, stream, scenes, sources & more.")
-        .icon("icon:thesvg/obs-studio")
+        .icon("obs-logo.svg")
         .ack_timeout_ms(5000)
         .setup("obs-setup", Some("setup.html"))
         .on_ready(|rt| {
@@ -303,12 +303,12 @@ fn main() {
             Ok(())
         })
         // 1–2. Record, pause
-        .action(global_toggle("record", "Record", "record.svg", [("stopped", "Record Off", "⏹"), ("recording", "Recording", "⏺")], "StartRecord", "StopRecord", |c| c.recording))
+        .action(global_toggle("record", "Record", "record.svg", [("stopped", "Record Off", "square"), ("recording", "Recording", "circle-dot")], "StartRecord", "StopRecord", |c| c.recording))
         .action(
             Action::toggle("record-pause", "Record Pause")
                 .icon("record-pause.svg")
-                .state("recording", "Recording", "▶")
-                .state("paused", "Paused", "⏸")
+                .state("recording", "Recording", "play")
+                .state("paused", "Paused", "pause")
                 .initial_with(|_| Some(pick(CACHE.lock().unwrap().record_paused, "paused", "recording").into()))
                 .on_press(|ctx| {
                     require_obs(ctx)?;
@@ -327,9 +327,9 @@ fn main() {
                 }),
         )
         // 4–6. Stream, virtual cam, replay buffer
-        .action(global_toggle("stream", "Stream", "stream.svg", [("stopped", "Offline", "○"), ("streaming", "Live", "●")], "StartStream", "StopStream", |c| c.streaming))
-        .action(global_toggle("virtual-cam", "Virtual Camera", "virtual-cam.svg", [("off", "Virtual Cam Off", "○"), ("on", "Virtual Cam On", "●")], "StartVirtualCam", "StopVirtualCam", |c| c.vcam))
-        .action(global_toggle("replay-buffer", "Replay Buffer", "replay-buffer.svg", [("stopped", "Buffer Off", "○"), ("active", "Buffer On", "●")], "StartReplayBuffer", "StopReplayBuffer", |c| c.replay_buffer))
+        .action(global_toggle("stream", "Stream", "stream.svg", [("stopped", "Offline", "circle"), ("streaming", "Live", "circle-dot")], "StartStream", "StopStream", |c| c.streaming))
+        .action(global_toggle("virtual-cam", "Virtual Camera", "virtual-cam.svg", [("off", "Virtual Cam Off", "circle"), ("on", "Virtual Cam On", "circle-dot")], "StartVirtualCam", "StopVirtualCam", |c| c.vcam))
+        .action(global_toggle("replay-buffer", "Replay Buffer", "replay-buffer.svg", [("stopped", "Buffer Off", "circle"), ("active", "Buffer On", "circle-dot")], "StartReplayBuffer", "StopReplayBuffer", |c| c.replay_buffer))
         .action(simple_button("replay-buffer-save", "Save Replay", "replay-save.svg", "SaveReplayBuffer"))
         // 8–10. Collection, profile, scene
         .action(select_button("scene-collection", "Scene Collection", "scene-collection.svg", "collection", "get-scene-collections", "No scene collection selected", "SetCurrentSceneCollection", "sceneCollectionName"))
@@ -343,8 +343,8 @@ fn main() {
                     input::query_select("scene", "Scene", "get-scenes", &[]),
                     input::query_select("source", "Source", "get-scene-items", &["scene"]).with("showIf", json!({"key": "scene", "truthy": true})),
                 ])
-                .state("visible", "Visible", "👁")
-                .state("hidden", "Hidden", "🚫")
+                .state("visible", "Visible", "eye")
+                .state("hidden", "Hidden", "eye-off")
                 .initial_with(|ic| {
                     register(&ic.instance_id, "source-visibility", &ic.inputs);
                     Some("visible".into()) // actual state pushed by on_ready → sync_per_instance_states()
@@ -368,8 +368,8 @@ fn main() {
             Action::toggle("audio-mixer", "Audio Mixer")
                 .icon("audio-mixer.svg")
                 .inputs(vec![input::query_select("source", "Audio Source", "get-audio-inputs", &[])])
-                .state("unmuted", "Unmuted", "🔊")
-                .state("muted", "Muted", "🔇")
+                .state("unmuted", "Unmuted", "volume-2")
+                .state("muted", "Muted", "volume-x")
                 .initial_with(|ic| {
                     register(&ic.instance_id, "audio-mixer", &ic.inputs);
                     Some("unmuted".into())
@@ -414,8 +414,8 @@ fn main() {
         .action(
             Action::toggle("studio-mode", "Studio Mode")
                 .icon("studio-mode.svg")
-                .state("off", "Studio Off", "○")
-                .state("on", "Studio On", "●")
+                .state("off", "Studio Off", "circle")
+                .state("on", "Studio On", "circle-dot")
                 .initial_with(|_| Some(pick(CACHE.lock().unwrap().studio_mode, "on", "off").into()))
                 .on_press(|ctx| {
                     require_obs(ctx)?;
@@ -451,8 +451,8 @@ fn main() {
                     input::query_select("source", "Source", "get-sources", &[]),
                     input::query_select("filter", "Filter", "get-filters", &["source"]).with("showIf", json!({"key": "source", "truthy": true})),
                 ])
-                .state("enabled", "Filter On", "✓")
-                .state("disabled", "Filter Off", "✗")
+                .state("enabled", "Filter On", "check")
+                .state("disabled", "Filter Off", "x")
                 .initial_with(|ic| {
                     register(&ic.instance_id, "filter", &ic.inputs);
                     Some("enabled".into())

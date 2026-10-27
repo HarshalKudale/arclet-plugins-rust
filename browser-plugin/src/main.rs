@@ -203,32 +203,32 @@ fn main() {
         .version("1.0.0")
         .author("Arclet")
         .description("Shared Chrome and Firefox browser controls, wheels, and zoom actions.")
-        .icon("icon:lucide/globe")
+        .icon("globe")
         .ack_timeout_ms(5000);
 
     // (id, label, icon, shortcut)
     type Shortcut = fn(&Value) -> Result<String>;
     let basics: Vec<(&str, &str, &str, Shortcut)> = vec![
-        ("new-tab", "New Tab", "icon:lucide/notebook-tabs", |_| Ok("ctrl t".into())),
-        ("new-window", "New Window", "icon:lucide/app-window", |_| Ok("ctrl n".into())),
-        ("new-private-window", "New Private / Incognito Window", "icon:lucide/app-window", |i| Ok(meta(browser_key(i)?).private_shortcut.into())),
-        ("close-tab", "Close Tab", "icon:lucide/notebook-tabs", |_| Ok("ctrl w".into())),
-        ("reopen-closed-tab", "Reopen Closed Tab", "icon:lucide/notebook-tabs", |_| Ok("ctrl shift t".into())),
-        ("next-tab", "Next Tab", "icon:lucide/notebook-tabs", |_| Ok("ctrl pgdn".into())),
-        ("previous-tab", "Previous Tab", "icon:lucide/notebook-tabs", |_| Ok("ctrl pgup".into())),
-        ("reload-tab", "Reload Tab", "icon:lucide/refresh-cw", |_| Ok("ctrl r".into())),
-        ("hard-reload-tab", "Hard Reload", "icon:lucide/refresh-cw", |i| Ok(meta(browser_key(i)?).hard_reload_shortcut.into())),
-        ("go-back", "Back", "icon:lucide/arrow-left", |_| Ok("alt left".into())),
-        ("go-forward", "Forward", "icon:lucide/arrow-right", |_| Ok("alt right".into())),
-        ("focus-address-bar", "Focus Address Bar", "icon:lucide/search", |_| Ok("ctrl l".into())),
-        ("open-downloads", "Open Downloads", "icon:lucide/download", |_| Ok("ctrl j".into())),
-        ("open-history", "Open History", "icon:lucide/history", |_| Ok("ctrl h".into())),
-        ("open-bookmarks-manager", "Open Bookmarks Manager", "icon:lucide/bookmark", |_| Ok("ctrl shift o".into())),
-        ("bookmark-page", "Bookmark Page", "icon:lucide/bookmark", |_| Ok("ctrl d".into())),
-        ("find-in-page", "Find in Page", "icon:lucide/search", |_| Ok("ctrl f".into())),
-        ("print-page", "Print Page", "icon:lucide/printer", |_| Ok("ctrl p".into())),
-        ("save-page", "Save Page", "icon:lucide/save", |_| Ok("ctrl s".into())),
-        ("toggle-fullscreen", "Toggle Fullscreen", "icon:lucide/maximize", |_| Ok("f11".into())),
+        ("new-tab", "New Tab", "notebook-tabs", |_| Ok("ctrl t".into())),
+        ("new-window", "New Window", "app-window", |_| Ok("ctrl n".into())),
+        ("new-private-window", "New Private / Incognito Window", "app-window", |i| Ok(meta(browser_key(i)?).private_shortcut.into())),
+        ("close-tab", "Close Tab", "notebook-tabs", |_| Ok("ctrl w".into())),
+        ("reopen-closed-tab", "Reopen Closed Tab", "notebook-tabs", |_| Ok("ctrl shift t".into())),
+        ("next-tab", "Next Tab", "notebook-tabs", |_| Ok("ctrl pgdn".into())),
+        ("previous-tab", "Previous Tab", "notebook-tabs", |_| Ok("ctrl pgup".into())),
+        ("reload-tab", "Reload Tab", "refresh-cw", |_| Ok("ctrl r".into())),
+        ("hard-reload-tab", "Hard Reload", "refresh-cw", |i| Ok(meta(browser_key(i)?).hard_reload_shortcut.into())),
+        ("go-back", "Back", "arrow-left", |_| Ok("alt left".into())),
+        ("go-forward", "Forward", "arrow-right", |_| Ok("alt right".into())),
+        ("focus-address-bar", "Focus Address Bar", "search", |_| Ok("ctrl l".into())),
+        ("open-downloads", "Open Downloads", "download", |_| Ok("ctrl j".into())),
+        ("open-history", "Open History", "history", |_| Ok("ctrl h".into())),
+        ("open-bookmarks-manager", "Open Bookmarks Manager", "bookmark", |_| Ok("ctrl shift o".into())),
+        ("bookmark-page", "Bookmark Page", "bookmark", |_| Ok("ctrl d".into())),
+        ("find-in-page", "Find in Page", "search", |_| Ok("ctrl f".into())),
+        ("print-page", "Print Page", "printer", |_| Ok("ctrl p".into())),
+        ("save-page", "Save Page", "save", |_| Ok("ctrl s".into())),
+        ("toggle-fullscreen", "Toggle Fullscreen", "maximize", |_| Ok("f11".into())),
     ];
     for (id, label, icon, shortcut) in basics {
         plugin = plugin.action(basic_button(id, label, icon, shortcut));
@@ -237,7 +237,7 @@ fn main() {
     plugin
         .action(
             Action::button("custom-keybind", "Custom Keybind")
-                .icon("icon:lucide/keyboard")
+                .icon("keyboard")
                 .inputs(vec![browser_input(), input::keybind("keys", "Keys").placeholder("k")])
                 .on_press(|ctx| {
                     let keys = ctx.input_str("keys").trim().to_string();
@@ -257,14 +257,14 @@ fn main() {
         }))
         .action(
             Action::button("open-url", "Open URL")
-                .icon("icon:lucide/link")
+                .icon("link")
                 .inputs(vec![browser_input(), input::text("url", "URL").placeholder("https://example.com")])
                 .on_press(|ctx| open_in_browser(&browser_value(&ctx.inputs), &ctx.input_str("url"))),
         )
-        .action(hold_repeat("hold-next-tab", "Hold Next Tab", "icon:lucide/notebook-tabs", ("Idle", "▷"), ("Cycling", "▶"), |i| tab_step("ctrl pgdn")(i)))
-        .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "icon:lucide/notebook-tabs", ("Idle", "◁"), ("Cycling", "◀"), |i| tab_step("ctrl pgup")(i)))
-        .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom.svg", ("Idle", "＋"), ("Zooming", "🔍"), |i| zoom_step(Zoom::In)(i)))
-        .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom.svg", ("Idle", "－"), ("Zooming", "🔎"), |i| zoom_step(Zoom::Out)(i)))
+        .action(hold_repeat("hold-next-tab", "Hold Next Tab", "notebook-tabs", ("Idle", "chevron-right"), ("Cycling", "chevrons-right"), |i| tab_step("ctrl pgdn")(i)))
+        .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "notebook-tabs", ("Idle", "chevron-left"), ("Cycling", "chevrons-left"), |i| tab_step("ctrl pgup")(i)))
+        .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom.svg", ("Idle", "zoom-in"), ("Zooming", "zoom-in"), |i| zoom_step(Zoom::In)(i)))
+        .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom.svg", ("Idle", "zoom-out"), ("Zooming", "zoom-out"), |i| zoom_step(Zoom::Out)(i)))
         .action(
             Action::slider("page-zoom", "Page Zoom", 25.0, 300.0)
                 .icon("zoom.svg")
@@ -295,8 +295,8 @@ fn main() {
                     Ok(())
                 }),
         )
-        .action(link_wheel("bookmarks-wheel", "Bookmarks", "icon:lucide/bookmark", "bookmark", "🔖", "No {} bookmarks were found", data::bookmarks))
-        .action(link_wheel("history-wheel", "Recent History", "icon:lucide/history", "history", "🕘", "No recent {} history items were found", data::history))
+        .action(link_wheel("bookmarks-wheel", "Bookmarks", "bookmark", "bookmark", "bookmark", "No {} bookmarks were found", data::bookmarks))
+        .action(link_wheel("history-wheel", "Recent History", "history", "history", "history", "No recent {} history items were found", data::history))
         .query("installed_browser", |ctx| {
             let mut apps: Vec<Value> = ctx
                 .installed_apps()?

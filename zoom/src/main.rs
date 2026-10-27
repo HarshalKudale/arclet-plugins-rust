@@ -156,7 +156,7 @@ fn main() {
         .version("1.0.0")
         .author("Arclet")
         .description("Control Zoom — mute, video, screen share, raise hand, recording & more.")
-        .icon("icon:thesvg/zoom")
+        .icon("zoom-logo.svg")
         .ack_timeout_ms(5000)
         .on_ready(|rt| {
             let _ = RUNTIME.set(rt.clone());
