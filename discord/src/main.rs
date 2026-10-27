@@ -12,7 +12,7 @@ mod state;
 
 use arclet_sdk::input::{self, InputExt};
 use arclet_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
-use common::{clear_token, client_id, load_token};
+use common::{clear_token, client_id, load_token, refresh_token};
 use helpers::*;
 use rpc::{Rpc, RpcError};
 use state::state;
@@ -150,8 +150,16 @@ fn connect_inner() {
         std::process::exit(1);
     };
 
-    let login = Rpc::connect(&client_id()).and_then(|c| c.authenticate(&token).map(|_| c));
-    let c = match login {
+    let login = |token: &str| Rpc::connect(&client_id()).and_then(|c| c.authenticate(token).map(|_| c));
+    let mut result = login(&token);
+    if matches!(result, Err(RpcError { code: Some(_), .. })) {
+        // Expired or revoked: one renewal through the token worker before asking for setup.
+        if let Some(fresh) = refresh_token() {
+            log("RPC token renewed");
+            result = login(&fresh);
+        }
+    }
+    let c = match result {
         Ok(c) => c,
         Err(RpcError { code: Some(code), message }) => {
             // Discord returned a numeric error code — token is bad (revoked, invalid, wrong scopes).
@@ -433,7 +441,7 @@ fn main() {
         .version("1.0.0")
         .author("Arclet")
         .description("Control Discord — mute, deafen, PTT, channels, volume, soundboard & more.")
-        .icon("icon:thesvg/discord")
+        .icon("discord-logo.svg")
         .ack_timeout_ms(5000)
         .setup("discord-setup", Some("setup.html"))
         // onReady fires once after the first sync — all placed instances are known, so
@@ -448,7 +456,7 @@ fn main() {
     plugin
         // 1–2. Mute, deafen
         .action(voice_toggle("mute", "Mute", "mute_0.png", [("unmuted", "Unmuted", "mute_0.png"), ("muted", "Muted", "mute_1.png")], |s| s.muted, "mute", |s, v| s.muted = v))
-        .action(voice_toggle("deafen", "Deafen", "deafen_0.svg", [("undeafened", "Undeafened", "deafen_0.png"), ("deafened", "Deafened", "deafen_1.png")], |s| s.deafened, "deaf", |s, v| s.deafened = v))
+        .action(voice_toggle("deafen", "Deafen", "deafen_0.png", [("undeafened", "Undeafened", "deafen_0.png"), ("deafened", "Deafened", "deafen_1.png")], |s| s.deafened, "deaf", |s, v| s.deafened = v))
         // 3–4. Push to talk / mute
         .action(hold_voice("push-to-talk", "Push to Talk", "pushtotalk_0.svg", ("Idle", "pushtotalk_0.svg"), ("Talking", "pushtotalk_1.svg"), false))
         .action(hold_voice("push-to-mute", "Push to Mute", "pushtomute_0.svg", ("Active", "pushtomute_0.svg"), ("Muted", "pushtomute_1.svg"), true))
@@ -472,7 +480,7 @@ fn main() {
         .action(
             Action::toggle("join-voice-channel", "Join Voice Channel")
                 .icon("voice_1.png")
-                .state("idle", "Join", "voice_1.svg")
+                .state("idle", "Join", "voice_1.png")
                 .state("in", "In Channel", "voice_0.png")
                 .inputs(vec![
                     guild_input(),
@@ -613,7 +621,7 @@ fn main() {
         // 10. Volume control
         .action(
             Action::button("volume-control", "Volume Control")
-                .icon("volup.svg")
+                .icon("volume-2")
                 .inputs(vec![
                     input::select("device", "Device", &[("output", "Output (Speakers/Headphones)"), ("input", "Input (Microphone)"), ("both", "Both")]),
                     mode_input(),
@@ -663,7 +671,7 @@ fn main() {
         // 10b. Output volume slider
         .action(
             Action::slider("output-volume", "Output Volume", 0.0, 200.0)
-                .icon("volup.svg")
+                .icon("volume-2")
                 .unit("%")
                 .initial_with(|_| Some(num(state().output_volume)))
                 .on_adjust(|ctx| {
@@ -684,7 +692,7 @@ fn main() {
         // 11. User volume
         .action(
             Action::button("user-volume-control", "User Volume")
-                .icon("volup.svg")
+                .icon("volume-2")
                 .inputs(vec![
                     input::query_select("userId", "Call Member", "discord-get-current-voice-users", &[]),
                     mode_input(),
@@ -767,7 +775,7 @@ fn main() {
                         .map(|(i, ch)| {
                             let child = format!("voice-{i}");
                             let id = ch["id"].as_str().unwrap_or("").to_string();
-                            let icon = if cur.as_deref() == Some(id.as_str()) { "voice_0.png" } else { "voice_1.svg" };
+                            let icon = if cur.as_deref() == Some(id.as_str()) { "voice_0.png" } else { "voice_1.png" };
                             map.insert(child.clone(), (id, guild.clone()));
                             json!({"id": child, "label": name_of(ch), "icon": icon})
                         })

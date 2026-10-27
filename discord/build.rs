@@ -1,7 +1,7 @@
 //! Expose `DISCORD_CLIENT_ID` and `ARCLET_DISCORD_TOKEN_URL` from `.env` (if
 //! present) as compile-time env vars so a shipped binary can fall back to them
 //! via `option_env!`. The client secret is never built in: the token exchange
-//! runs on the Arclet website (`/api/discord/token`).
+//! and renewal run on the Arclet website (`/api/discord/token`).
 
 fn main() {
     println!("cargo:rerun-if-changed=.env");
