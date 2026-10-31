@@ -2,7 +2,7 @@
 //!
 //! Current Window (minimize/maximize/z-order/toggles), Audio (per-app volume/mute matched by
 //! exe name), Position (snap to halves/quarters/fullscreen/custom on any monitor), window-picker
-//! wheels ("Dynamic …"), a taskbar-style switcher, virtual-desktop/system shortcuts, and Windows clipboard history.
+//! wheels ("Dynamic …"), a taskbar-style switcher, virtual-desktop/system shortcuts, live system stats, and Windows clipboard history.
 
 #[cfg(not(windows))]
 fn main() {
@@ -15,6 +15,8 @@ mod audio;
 #[cfg(windows)]
 mod clipboard;
 #[cfg(windows)]
+mod stats;
+#[cfg(windows)]
 mod win32;
 #[cfg(windows)]
 mod winicon;
@@ -26,9 +28,9 @@ fn main() {
 
 #[cfg(windows)]
 mod app {
-    use crate::{audio, clipboard, win32, win32::Region, winicon};
+    use crate::{audio, clipboard, stats, win32, win32::Region, winicon};
     use arclet_sdk::input::{self, InputExt};
-    use arclet_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Value};
+    use arclet_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -477,6 +479,18 @@ mod app {
             .action(keys_button("run-dialog", "Run Dialog", "square-terminal", "win r"))
             .action(keys_button("emoji-panel", "Emoji Panel", "smile", "win period"))
             .action(keys_button("task-manager", "Task Manager", "activity", "ctrl shift esc"))
+            // A plain button (opens Task Manager) whose tile shows the chosen stat live.
+            .action(
+                keys_button("system-stats", "System Stats", "gauge", "ctrl shift esc")
+                    .inputs(vec![input::select("stat", "Show", &[("cpu", "CPU"), ("gpu", "GPU"), ("memory", "Memory")]).with("default", "cpu")])
+                    .live(std::time::Duration::from_secs(1), |ic| {
+                        let (name, pct) = stats::read(&ic.input_str("stat"))?;
+                        Ok(match pct {
+                            Some(p) => Visual::new().label(format!("{name} {p:.0}%")).icon(stats::gauge(p)),
+                            None => Visual::new().label(format!("{name} …")),
+                        })
+                    }),
+            )
             // Win+L can't be injected via SendInput, so lock through the API.
             .action(Action::button("lock-pc", "Lock PC").icon("lock").on_press(|_| win32::lock_workstation()));
 
