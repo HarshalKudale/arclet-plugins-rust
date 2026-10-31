@@ -15,6 +15,7 @@ placed slices carry over.
 | [vlc](./vlc) | VLC media controls via its HTTP interface |
 | [zoom](./zoom) | Zoom meeting controls via the local API |
 | [win-tools](./win-tools) | Window management, per-app volume, clipboard history (`windows` crate, Windows only) |
+| [claude](./claude) | Running Claude Code sessions (status dots, window switching), Remote Control, usage, recent sessions — read-only, no prompts |
 
 `vscode-companion` and `intellij-companion` are not ported: they are an editor extension and a
 Kotlin IDE plugin that run *inside* VS Code / IntelliJ, not Arclet SDK plugins. The Rust `vscode`

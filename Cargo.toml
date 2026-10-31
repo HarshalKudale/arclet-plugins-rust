@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools"]
+members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "claude"]
 
 [workspace.dependencies]
 arclet-sdk = { path = "../arclet-sdk-rust" }
