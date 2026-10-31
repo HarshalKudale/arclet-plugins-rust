@@ -469,6 +469,10 @@ pub fn move_to_region(hwnd: Hwnd, work: Rect, r: Region) {
     set_window_bounds(hwnd, work.x + f(work.width, r.x), work.y + f(work.height, r.y), f(work.width, r.w), f(work.height, r.h));
 }
 
+pub fn lock_workstation() -> Result {
+    unsafe { windows::Win32::System::Shutdown::LockWorkStation() }.map_err(|e| win_err("LockWorkStation", e))
+}
+
 /// Cover the entire monitor, taskbar included.
 pub fn make_fullscreen(hwnd: Hwnd, m: Rect) {
     set_window_bounds(hwnd, m.x, m.y, m.width, m.height);

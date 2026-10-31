@@ -2,7 +2,7 @@
 //!
 //! Current Window (minimize/maximize/z-order/toggles), Audio (per-app volume/mute matched by
 //! exe name), Position (snap to halves/quarters/fullscreen/custom on any monitor), window-picker
-//! wheels ("Dynamic …"), a taskbar-style switcher, and Windows clipboard history.
+//! wheels ("Dynamic …"), a taskbar-style switcher, virtual-desktop/system shortcuts, and Windows clipboard history.
 
 #[cfg(not(windows))]
 fn main() {
@@ -463,6 +463,23 @@ mod app {
             .action(snap_picker("dynamic-move-bottom-right-wheel", "Dynamic Move Bottom Right", "snap-bottomright.svg", reg(0.5, 0.5, 0.5, 0.5)))
             .action(picker_wheel("dynamic-custom-position-wheel", "Dynamic Custom Position", "move.svg", custom_position_inputs(), |ctx, w| apply_custom_position(w, &ctx.inputs)));
 
+        // ── Virtual Desktops & System (Windows shell shortcuts) ──
+        p = p
+            .action(keys_button("desktop-previous", "Previous Desktop", "chevrons-left", "ctrl win left"))
+            .action(keys_button("desktop-next", "Next Desktop", "chevrons-right", "ctrl win right"))
+            .action(keys_button("desktop-new", "New Desktop", "copy-plus", "ctrl win d"))
+            .action(keys_button("desktop-close", "Close Desktop", "copy-x", "ctrl win f4"))
+            .action(keys_button("task-view", "Task View", "layout-grid", "win tab"))
+            .action(keys_button("show-desktop", "Show Desktop", "monitor", "win d"))
+            .action(keys_button("screen-snip", "Screen Snip", "scissors", "win shift s"))
+            .action(keys_button("file-explorer", "File Explorer", "folder-open", "win e"))
+            .action(keys_button("open-settings", "Windows Settings", "settings", "win i"))
+            .action(keys_button("run-dialog", "Run Dialog", "square-terminal", "win r"))
+            .action(keys_button("emoji-panel", "Emoji Panel", "smile", "win period"))
+            .action(keys_button("task-manager", "Task Manager", "activity", "ctrl shift esc"))
+            // Win+L can't be injected via SendInput, so lock through the API.
+            .action(Action::button("lock-pc", "Lock PC").icon("lock").on_press(|_| win32::lock_workstation()));
+
         // ── Clipboard History ──
         p.action(
             Action::wheel("clipboard-history-wheel", "Clipboard History").icon("clipboard.svg").on_open(|ctx| {
@@ -523,6 +540,11 @@ mod app {
                 }
                 Ok(())
             })
+    }
+
+    /// A button that presses a Windows shell shortcut through the host.
+    fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
+        Action::button(id, label).icon(icon).on_press(move |_| arclet_sdk::send_keys(keys))
     }
 
     fn center_button(id: &str, label: &str) -> Action {
