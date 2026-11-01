@@ -1,6 +1,7 @@
 # Win Tools
 
-Advanced Windows window-management and system-volume tools for Arclet.
+Advanced Windows window-management and system-volume tools for Arclet. Windows only; on macOS
+use [Mac Tools](../mac-tools).
 
 ## What it does
 
@@ -19,3 +20,8 @@ Advanced Windows window-management and system-volume tools for Arclet.
 - Stream decks and productivity wheels.
 - Multi-monitor workflows.
 - Fast window layout changes while gaming or working.
+
+Task View, Show Desktop, Run, Screen Snip, Settings, File Explorer and Task Manager open through the
+Windows shell (`ShellExecute`) rather than shortcuts, so the focused app can't intercept them.
+Virtual desktop switching and the Emoji Panel still use their Win-key shortcuts: Windows has no
+public API for them.

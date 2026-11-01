@@ -1,0 +1,73 @@
+# Arclet plugins (Rust) — working rules
+
+Rust plugins for Arclet, built on `arclet-sdk` (`../arclet-sdk-rust`). Arclet runs on **Windows
+and macOS**; see README.md for the plugin list, build and packaging.
+
+## Rule 1: keystrokes are the last resort
+
+Applies to every plugin and to Arclet's built-in actions (`../arclet/CLAUDE.md` has the host copy).
+Do **not** implement an action by sending a keyboard shortcut (`send_keys`, `ctx.send_keys`,
+`keys_button`, posting CGEvents/SendInput) when a stable OS or app route exists. Shortcuts are
+fragile:
+
+- the app in focus may bind the same chord and swallow it (e.g. an app using Ctrl+→);
+- users remap or disable shortcuts (System Settings → Keyboard Shortcuts, PowerToys…);
+- keyboard layouts move keys; injected keys may lack flags real keyboards send (macOS Fn/NumericPad);
+- timing and focus changes (the dial, the deck) can send the chord to the wrong window.
+
+Prefer, in this order:
+
+1. **An OS API.** Windows: Win32 / COM / WinRT through the `windows` crate (window management,
+   `LockWorkStation`, audio endpoints, clipboard). macOS: public frameworks (Accessibility
+   `AXUIElement`, CoreAudio, CoreGraphics, AppKit, Text Input Sources, IOKit).
+2. **A long-stable private OS entry point**, resolved with `dlsym` / `GetProcAddress` at call time
+   so its absence is a clear error and never a crash at launch (e.g. `CoreDockSendNotification`
+   for Mission Control, `SACLockScreenImmediate` for Lock Screen).
+3. **The target app's own interface**: its local API / socket (OBS websocket, Discord RPC, VLC HTTP,
+   the VS Code / IntelliJ companions), its scripting dictionary (AppleScript `do script`,
+   iTerm2 `write text`), or pressing its menu item through Accessibility (mac-tools pastes by
+   pressing the front app's Edit ▸ Paste item, found by its ⌘V binding, not by sending ⌘V).
+4. **Launching the system app / URL** (`open -b <bundle id>`, `ms-settings:` URIs).
+5. **A keystroke**, only when none of the above exists. Then:
+   - say why in a comment next to the action ("no API opens the Force Quit window; ⌥⌘Esc is
+     reserved by loginwindow, so no app can capture it");
+   - for a *system* shortcut, read the user's configured binding when the OS stores it (macOS
+     `com.apple.symbolichotkeys`) and post exactly that, instead of assuming the default;
+   - prefer system-reserved chords (handled by the OS before any app) over app-level ones;
+   - use the `mod` token (⌘ on macOS, Ctrl on Windows) for cross-platform app shortcuts.
+
+Keystrokes are fine when the action *is* typing (custom keybind actions the user configures, or
+text the plugin must enter, such as Claude's `/rc`), and for in-app shortcuts sent to an app that
+offers no other interface (browser tab shortcuts in Firefox/Zen).
+
+When reviewing or adding an action, check it against this rule and mention any keystroke that
+remains, with its reason.
+
+Current decisions (keep this list up to date):
+
+| Plugin | Route | Keystrokes left, and why |
+|---|---|---|
+| discord, obs, vlc, zoom, vscode, intellij | the app's own API / pipe / websocket / HTTP | none |
+| mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste), Screenshot app | Spaces ←/→ and Spotlight (no API; the user's configured system hotkey is posted), Force Quit ⌥⌘Esc (no API; reserved by loginwindow), ⌘V only for apps without a Paste menu item |
+| win-tools | Win32 (windows, audio, `LockWorkStation`), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager | virtual desktops (no public API), Emoji Win+. (no API), Ctrl+V for clipboard history (no app-independent paste call) |
+| browser-plugin | macOS Chromium (Chrome/Edge/Brave): AppleScript for tabs, navigation, windows, incognito, history/downloads/bookmarks pages; URLs via `open -a` / the browser exe | Firefox/Zen (no scripting interface), all browsers on Windows (no control interface without a debug flag), and page commands with no scripting equivalent (find, print, save, zoom, hard reload, reopen tab, full screen) |
+| claude | session files, process tree, Terminal/iTerm AppleScript for tab focus | typing `/rc` (text entry; the session socket has no Remote Control command) |
+
+## Rule 2: both OSes stay working
+
+- A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam
+  per concern (e.g. `claude/src/win.rs` / `mac.rs` behind `mod os`).
+- An OS-only plugin or action declares `.platforms(&["windows"])` / `.platforms(&["macos"])`.
+  `win-tools` is Windows-only and `mac-tools` is its macOS counterpart.
+- Don't regress Windows while adding macOS support. Before finishing, run
+  `./scripts/check-windows-from-mac.sh` (Windows type-check, no warnings) and `cargo test --workspace`.
+- `fg_process` is the exe name on Windows and the bundle id on macOS.
+
+## Rule 3: verify, don't assume
+
+- Drive a built plugin over the real stdio protocol (`hello` → `sync` → `request`), not just unit
+  tests. Owning FFI wrappers must never be built around NULL (use `.then(|| ..)`, not
+  `.then_some(..)`, for anything with a `Drop` that releases).
+- Live tests that touch the user's screen (moving windows, opening Mission Control) are
+  `#[ignore]` and act only on windows they create themselves. Ask before running anything that
+  takes over the user's display.

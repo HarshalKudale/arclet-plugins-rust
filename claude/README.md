@@ -1,6 +1,6 @@
 # Claude
 
-A dial/deck UI for the Claude Code sessions already running on this PC. It only **reads**
+A dial/deck UI for the Claude Code sessions already running on this computer (Windows and macOS). It only **reads**
 Claude's local state in `~/.claude` (or `CLAUDE_CONFIG_DIR`). It never calls a model, never
 sends a prompt, and needs no account or setup. The only thing it ever types into a session is
 the `/rc` command, which turns on Remote Control.
@@ -19,7 +19,7 @@ Live state is what Claude Code itself publishes. It is not a pipe protocol. A di
 on `sessions/` pushes the tile the moment a session's file changes, and a 2 s poll covers
 focus changes.
 
-About the `messagingSocketPath` pipe (`\\.\pipe\LOCAL\cc-msg-…`): it is Claude Code's
+About the `messagingSocketPath` pipe (`\\.\pipe\LOCAL\cc-msg-…` on Windows, a unix socket on macOS): it is Claude Code's
 cross-session **inbox**, authenticated with the per-session `.key` tokens. It accepts `user`
 frames, which become messages in the conversation, plus a few control frames: `rename`,
 `notify_when_idle` and artifact bookkeeping. It has no status query and no Remote Control
@@ -38,11 +38,16 @@ must not do. Everything the pipe could report also lands in `sessions/<pid>.json
 ## Limits
 
 - **These are local token counts, not your plan's 5 h / weekly limit percentages.**
-- Several sessions in one Windows Terminal window can't be told apart by tab. Switching focuses
-  the window, not the tab. Remote Control refuses to type into a shared window unless it is
-  already in front, because you are then on the tab you mean.
+- **Windows:** several sessions in one Windows Terminal window can't be told apart by tab.
+  Switching focuses the window, not the tab. Remote Control refuses to type into a shared window
+  unless it is already in front, because you are then on the tab you mean.
+- **macOS:** sessions in **Terminal** and **iTerm2** are matched to their exact tab by tty, so
+  switching selects the right tab and Remote Control always types into the right session. The
+  first switch asks to let Arclet control Terminal / iTerm2 (System Settings → Privacy & Security
+  → Automation). Other hosts (VS Code, the Claude app) are focused per app; several sessions in
+  one of them count as a shared window, as on Windows. Resuming opens a new Terminal.app window.
+  Telling which session is in front uses the Accessibility permission Arclet already has.
 - `/rc` typed while a session is busy is queued by Claude Code and runs after the turn.
-- Windows only.
 
 ## Build
 

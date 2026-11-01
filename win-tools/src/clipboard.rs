@@ -279,7 +279,9 @@ fn key(vk: VIRTUAL_KEY, up: bool) -> INPUT {
     }
 }
 
-/// Send a synthetic Ctrl+V to whichever window has input focus.
+/// Send a synthetic Ctrl+V to whichever window has input focus. A keystroke
+/// on purpose: Windows has no app-independent paste call (`WM_PASTE` only
+/// reaches classic edit controls; UI Automation has no paste pattern).
 pub fn send_paste() {
     let inputs = [key(VK_CONTROL, false), key(VK_V, false), key(VK_V, true), key(VK_CONTROL, true)];
     unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };

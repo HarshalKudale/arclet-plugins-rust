@@ -7,3 +7,6 @@ publish = false
 [dependencies]
 arclet-sdk.workspace = true
 rusqlite = { version = "0.32", features = ["bundled"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.10"

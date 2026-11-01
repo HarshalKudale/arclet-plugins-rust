@@ -1,9 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "claude"]
+members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "mac-tools", "claude"]
 
 [workspace.dependencies]
-arclet-sdk = { git = "https://github.com/HarshalKudale/arclet-sdk-rust.git" }
+# `macos-support` until that SDK branch is merged into master; then drop `branch`.
+arclet-sdk = { git = "https://github.com/HarshalKudale/arclet-sdk-rust.git", branch = "macos-support" }
 ureq = { version = "2", features = ["json"] }
 base64 = "0.22"
 serde_json = "1"

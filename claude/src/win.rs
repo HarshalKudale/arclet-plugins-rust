@@ -10,6 +10,68 @@ use windows::Win32::UI::WindowsAndMessaging::*;
 
 pub type Hwnd = isize;
 
+// ── OS interface shared with mac.rs ──────────────────────────────────────────
+
+/// What hosts a session: a top-level window.
+pub type Window = Hwnd;
+
+/// One process/window snapshot, taken once per `sessions()` pass.
+pub struct Procs {
+    tree: HashMap<u32, (u32, String)>,
+    wins: HashMap<u32, Vec<Hwnd>>,
+}
+
+pub fn snapshot() -> Procs {
+    Procs { tree: process_tree(), wins: windows_by_pid() }
+}
+
+/// Whether `pid` is still the process that wrote the session file. `procStart`
+/// is the creation time in FILETIME ticks; a pid alone can be reused.
+pub fn alive(pid: u32, proc_start: &arclet_sdk::Value) -> bool {
+    let proc_start: Option<u64> = proc_start.as_str().and_then(|s| s.parse().ok());
+    started_at(pid).map_or(false, |t| proc_start.map_or(true, |p| p == t))
+}
+
+pub fn host_window(pid: u32, procs: &Procs) -> Option<Window> {
+    host_window_in(pid, &procs.tree, &procs.wins)
+}
+
+/// The window in front right now.
+pub struct Front(Hwnd);
+
+pub fn front() -> Front {
+    Front(foreground())
+}
+
+impl Front {
+    pub fn shows(&self, w: &Window) -> bool {
+        self.0 == *w
+    }
+}
+
+/// Bring the session's window to the front.
+pub fn focus(w: &Window) {
+    bring_to_front(*w)
+}
+
+/// Open a URL with the default handler without going through a shell.
+pub fn open_url(url: &str) -> std::io::Result<()> {
+    std::process::Command::new("rundll32").args(["url.dll,FileProtocolHandler", url]).spawn().map(|_| ())
+}
+
+/// Run `claude <args>` in a new terminal in `cwd` (Windows Terminal if present, else a console).
+pub fn run_in_terminal(cwd: &str, args: &[&str]) -> std::io::Result<()> {
+    use std::process::Command;
+    let wt = Command::new("wt.exe").args(["-d", cwd, "claude"]).args(args).spawn();
+    if wt.is_err() {
+        // cwd via current_dir, not the command line, so a path can't be parsed by cmd.
+        Command::new("cmd").args(["/c", "start", "", "cmd", "/k", "claude"]).args(args).current_dir(cwd).spawn()?;
+    }
+    Ok(())
+}
+
+// ── Win32 ────────────────────────────────────────────────────────────────────
+
 fn h(hwnd: Hwnd) -> HWND {
     HWND(hwnd as *mut c_void)
 }
@@ -66,7 +128,7 @@ pub fn windows_by_pid() -> HashMap<u32, Vec<Hwnd>> {
 
 /// The window hosting `pid`: the nearest ancestor (or its conhost child) that owns
 /// a top-level window — Windows Terminal, VS Code, a classic console, the Claude app.
-pub fn host_window(pid: u32, tree: &HashMap<u32, (u32, String)>, wins: &HashMap<u32, Vec<Hwnd>>) -> Option<Hwnd> {
+fn host_window_in(pid: u32, tree: &HashMap<u32, (u32, String)>, wins: &HashMap<u32, Vec<Hwnd>>) -> Option<Hwnd> {
     let mut p = pid;
     for _ in 0..12 {
         if let Some(w) = wins.get(&p).and_then(|v| v.first()) {

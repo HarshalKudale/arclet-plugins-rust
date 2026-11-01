@@ -5,17 +5,21 @@ Rust ports of the first-party [Arclet](https://github.com/HarshalKudale/Arclet) 
 generates the **same `actions.json` as its JS original** (same action ids, inputs, states), so
 placed slices carry over.
 
-| Plugin | Description |
-|--------|-------------|
-| [discord](./discord) | Discord voice controls over the desktop client's local RPC (own IPC client) |
-| [browser-plugin](./browser-plugin) | Chrome / Edge / Brave / Firefox / Zen shortcuts, wheels, bookmarks, history |
-| [intellij](./intellij) | JetBrains IDE actions via the Arclet IntelliJ companion plugin |
-| [obs](./obs) | OBS Studio control via obs-websocket v5 (own client, reconnecting) |
-| [vscode](./vscode) | VS Code controls via the Arclet VS Code companion extension |
-| [vlc](./vlc) | VLC media controls via its HTTP interface |
-| [zoom](./zoom) | Zoom meeting controls via the local API |
-| [win-tools](./win-tools) | Window management, per-app volume, clipboard history (`windows` crate, Windows only) |
-| [claude](./claude) | Running Claude Code sessions (status dots, window switching), Remote Control, usage, recent sessions — read-only, no prompts |
+Every plugin runs on **Windows and macOS** except the two OS-specific tool plugins, which are
+declared with `platforms` so Arclet only offers each one on its own OS.
+
+| Plugin | Description | OS |
+|--------|-------------|----|
+| [discord](./discord) | Discord voice controls over the desktop client's local RPC (named pipe on Windows, unix socket on macOS) | Windows, macOS |
+| [browser-plugin](./browser-plugin) | Chrome / Edge / Brave / Firefox / Zen shortcuts, wheels, bookmarks, history (per-OS install paths, profiles and shortcuts) | Windows, macOS |
+| [intellij](./intellij) | JetBrains IDE actions via the Arclet IntelliJ companion plugin | Windows, macOS |
+| [obs](./obs) | OBS Studio control via obs-websocket v5 (own client, reconnecting) | Windows, macOS |
+| [vscode](./vscode) | VS Code controls via the Arclet VS Code companion extension | Windows, macOS |
+| [vlc](./vlc) | VLC media controls via its HTTP interface | Windows, macOS |
+| [zoom](./zoom) | Zoom meeting controls via the local API | Windows, macOS |
+| [win-tools](./win-tools) | Window management, per-app volume, clipboard history (`windows` crate) | Windows |
+| [mac-tools](./mac-tools) | Window management (Accessibility API), window switcher, Spaces/system shortcuts, stats, audio devices + mic mute, clipboard history | macOS |
+| [claude](./claude) | Running Claude Code sessions (status dots, window/tab switching), Remote Control, usage, recent sessions — read-only, no prompts | Windows, macOS |
 
 `vscode-companion` and `intellij-companion` are not ported: they are an editor extension and a
 Kotlin IDE plugin that run *inside* VS Code / IntelliJ, not Arclet SDK plugins. The Rust `vscode`
@@ -34,10 +38,26 @@ arclet-plugin package    # dist/vlc.arclet
 
 All crates share one Cargo workspace (`cargo build --workspace`, one `target/`).
 
+The workspace uses the SDK's `macos-support` branch (the plugins need its `platforms` and per-OS
+`executables` support). Drop `branch` in `Cargo.toml` once it is merged into the SDK's master.
+
+### One package for both OSes
+
+`arclet-plugin build` records the binary under `runtime.executables["<os>"]`. Build on Windows,
+copy `dist/<id>/` to the Mac (or the other way round), build again there, then `package`: the
+manifest keeps both entries and the `.arclet` runs on both.
+
+### Checking Windows from a Mac
+
+```bash
+rustup target add x86_64-pc-windows-msvc   # once
+./scripts/check-windows-from-mac.sh        # type-checks every plugin for Windows (no linking)
+```
+
 ## Differences from the JS plugins
 
-- **No bundling / no Node runtime.** Each plugin ships as a native `.exe` (plus a `<id>-setup.exe` for plugins with setup); the manifest has no `runtime.language`.
-- **Config and credentials.** Setup writes `.env` (and Discord its token) into the plugin data folder (`%APPDATA%/Arclet/plugin-data/<id>/`, via `ctx.data_dir()`), which survives updates and reinstalls; the plugin reads it at start-up (`load_env()`, which also moves a `.env` left in the plugin folder by an older version). On an auth failure a plugin calls `mark_setup_required(reason)` and Arclet asks the user to run setup again. Discord never ships its client secret: `discord-setup` sends the authorization code to the Arclet website (`ARCLET_DISCORD_TOKEN_URL`, baked in from `discord/.env` by `build.rs` or set at runtime), which performs the token exchange; the plugin renews expired tokens through the same endpoint.
+- **No bundling / no Node runtime.** Each plugin ships as a native executable (`.exe` on Windows; plus a `<id>-setup` binary for plugins with setup); the manifest has no `runtime.language`.
+- **Config and credentials.** Setup writes `.env` (and Discord its token) into the plugin data folder (`%APPDATA%/Arclet/plugin-data/<id>/` on Windows, `~/Library/Application Support/Arclet/plugin-data/<id>/` on macOS, via `ctx.data_dir()`), which survives updates and reinstalls; the plugin reads it at start-up (`load_env()`, which also moves a `.env` left in the plugin folder by an older version). On an auth failure a plugin calls `mark_setup_required(reason)` and Arclet asks the user to run setup again. Discord never ships its client secret: `discord-setup` sends the authorization code to the Arclet website (`ARCLET_DISCORD_TOKEN_URL`, baked in from `discord/.env` by `build.rs` or set at runtime), which performs the token exchange; the plugin renews expired tokens through the same endpoint.
 - **OBS** subscribes to the non-high-volume event set (no input-volume-meter spam, which the plugin never used).
 - **Discord**: `auth.js` / `oauth.js` / `test/` in the JS plugin are not used by `plugin.js` and were not ported; the setup flow (native AUTHORIZE popup → token exchange) lives in `discord-setup`.
 - **Browser plugin** reads bookmarks/history from a *copy* of the browser's SQLite file (bundled SQLite via `rusqlite`), because running browsers lock the original.
