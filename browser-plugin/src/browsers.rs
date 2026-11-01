@@ -33,6 +33,7 @@ fn join(base: PathBuf, parts: &[&str]) -> PathBuf {
 }
 
 /// `[%ProgramFiles%, %ProgramFiles(x86)%, %LOCALAPPDATA%] / parts`
+#[cfg(windows)]
 fn install_dirs(parts: &[&str]) -> Vec<PathBuf> {
     vec![
         join(env("ProgramFiles", "C:\\Program Files"), parts),
@@ -41,51 +42,96 @@ fn install_dirs(parts: &[&str]) -> Vec<PathBuf> {
     ]
 }
 
+/// Per-user application data root: `%LOCALAPPDATA%` (Chromium) on Windows,
+/// `~/Library/Application Support` on macOS.
 fn local_data(parts: &[&str]) -> Option<PathBuf> {
-    Some(join(std::env::var("LOCALAPPDATA").unwrap_or_default().into(), parts))
+    #[cfg(windows)]
+    let base: PathBuf = std::env::var("LOCALAPPDATA").unwrap_or_default().into();
+    #[cfg(not(windows))]
+    let base = mac_app_support();
+    Some(join(base, parts))
 }
 
+#[cfg(not(windows))]
+fn home() -> PathBuf {
+    env("HOME", "/")
+}
+
+#[cfg(not(windows))]
+fn mac_app_support() -> PathBuf {
+    home().join("Library").join("Application Support")
+}
+
+/// `.app` bundles in `/Applications` and `~/Applications`, for each bundle name.
+#[cfg(not(windows))]
+fn app_bundles(names: &[&str]) -> Vec<PathBuf> {
+    names
+        .iter()
+        .flat_map(|n| [PathBuf::from("/Applications").join(n), home().join("Applications").join(n)])
+        .collect()
+}
+
+/// Shortcuts that differ per browser family and OS.
+fn private_shortcut(family: Family) -> &'static str {
+    match (family, cfg!(windows)) {
+        (Family::Chromium, true) => "ctrl shift n",
+        (Family::Chromium, false) => "cmd shift n",
+        (Family::Firefox, true) => "ctrl shift p",
+        (Family::Firefox, false) => "cmd shift p",
+    }
+}
+
+const HARD_RELOAD: &str = if cfg!(windows) { "ctrl f5" } else { "cmd shift r" };
+
 pub fn meta(key: &str) -> Meta {
-    let chromium = |label, matches, exe: &[&str], data: &[&str]| {
+    let chromium = |label, matches, exe: Vec<PathBuf>, data: &[&str]| {
         let mut bookmarks = data.to_vec();
         bookmarks.push("Bookmarks");
         let mut history = data.to_vec();
         history.push("History");
         Meta {
-
             label,
             family: Family::Chromium,
             matches,
-            exe_candidates: install_dirs(exe),
+            exe_candidates: exe,
             bookmarks_path: local_data(&bookmarks),
             history_path: local_data(&history),
-            private_shortcut: "ctrl shift n",
-            hard_reload_shortcut: "ctrl f5",
+            private_shortcut: private_shortcut(Family::Chromium),
+            hard_reload_shortcut: HARD_RELOAD,
         }
     };
-    let firefox = |label, matches, exe: Vec<PathBuf>, profile_root: &str| Meta {
-
+    let firefox = |label, matches, exe: Vec<PathBuf>, profile_root: &[&str]| Meta {
         label,
         family: Family::Firefox,
         matches,
         exe_candidates: exe,
         bookmarks_path: resolve_firefox_places(profile_root),
         history_path: resolve_firefox_places(profile_root),
-        private_shortcut: "ctrl shift p",
-        hard_reload_shortcut: "ctrl f5",
+        private_shortcut: private_shortcut(Family::Firefox),
+        hard_reload_shortcut: HARD_RELOAD,
     };
-    match key {
-        "msedge" => chromium("Microsoft Edge", &["edge", "microsoft edge", "msedge"], &["Microsoft", "Edge", "Application", "msedge.exe"], &["Microsoft", "Edge", "User Data", "Default"]),
-        "brave" => chromium("Brave", &["brave", "brave browser"], &["BraveSoftware", "Brave-Browser", "Application", "brave.exe"], &["BraveSoftware", "Brave-Browser", "User Data", "Default"]),
-        "firefox" => firefox("Firefox", &["firefox", "mozilla firefox"], install_dirs(&["Mozilla Firefox", "firefox.exe"]), "Mozilla\\Firefox"),
+    #[cfg(windows)]
+    return match key {
+        "msedge" => chromium("Microsoft Edge", &["edge", "microsoft edge", "msedge"], install_dirs(&["Microsoft", "Edge", "Application", "msedge.exe"]), &["Microsoft", "Edge", "User Data", "Default"]),
+        "brave" => chromium("Brave", &["brave", "brave browser"], install_dirs(&["BraveSoftware", "Brave-Browser", "Application", "brave.exe"]), &["BraveSoftware", "Brave-Browser", "User Data", "Default"]),
+        "firefox" => firefox("Firefox", &["firefox", "mozilla firefox"], install_dirs(&["Mozilla Firefox", "firefox.exe"]), &["Mozilla", "Firefox"]),
         "zen" => {
             let mut exe = install_dirs(&["Zen Browser", "zen.exe"]);
             exe.push(join(std::env::var("LOCALAPPDATA").unwrap_or_default().into(), &["Programs", "Zen Browser", "zen.exe"]));
-            firefox("Zen", &["zen", "zen browser"], exe, "zen")
+            firefox("Zen", &["zen", "zen browser"], exe, &["zen"])
         }
         // Unknown keys fall back to Chrome, like the JS plugin.
-        _ => chromium("Chrome", &["chrome", "google chrome"], &["Google", "Chrome", "Application", "chrome.exe"], &["Google", "Chrome", "User Data", "Default"]),
-    }
+        _ => chromium("Chrome", &["chrome", "google chrome"], install_dirs(&["Google", "Chrome", "Application", "chrome.exe"]), &["Google", "Chrome", "User Data", "Default"]),
+    };
+    // macOS: `.app` bundles; profiles under ~/Library/Application Support.
+    #[cfg(not(windows))]
+    return match key {
+        "msedge" => chromium("Microsoft Edge", &["edge", "microsoft edge", "msedge", "com.microsoft.edgemac"], app_bundles(&["Microsoft Edge.app"]), &["Microsoft Edge", "Default"]),
+        "brave" => chromium("Brave", &["brave", "brave browser", "com.brave.browser"], app_bundles(&["Brave Browser.app"]), &["BraveSoftware", "Brave-Browser", "Default"]),
+        "firefox" => firefox("Firefox", &["firefox", "mozilla firefox", "org.mozilla.firefox"], app_bundles(&["Firefox.app"]), &["Firefox"]),
+        "zen" => firefox("Zen", &["zen", "zen browser", "app.zen-browser.zen"], app_bundles(&["Zen.app", "Zen Browser.app"]), &["zen"]),
+        _ => chromium("Chrome", &["chrome", "google chrome", "com.google.chrome"], app_bundles(&["Google Chrome.app"]), &["Google", "Chrome", "Default"]),
+    };
 }
 
 /// Selected combobox value: `{ value, label }` or a bare string.
@@ -111,7 +157,8 @@ pub fn detect_key(input: &Value) -> Option<&'static str> {
     })
 }
 
-/// Installed-executable path for a browser key or an explicit exe path / shell:AppsFolder id.
+/// Installed-executable path (a `.exe` on Windows, a `.app` bundle on macOS) for a
+/// browser key or an explicit path / shell:AppsFolder id.
 pub fn exe_path(browser: &str) -> Option<String> {
     if !browser.is_empty() && (Path::new(browser).exists() || browser.to_lowercase().starts_with("shell:appsfolder\\")) {
         return Some(browser.into());
@@ -126,9 +173,14 @@ pub fn ensure_executable(browser: &str) -> Result<String> {
     })
 }
 
-fn resolve_firefox_places(profile_root: &str) -> Option<PathBuf> {
-    let appdata = env("APPDATA", "");
-    let root = profile_root.split('\\').fold(appdata, |p, s| p.join(s));
+/// `profiles.ini` lives in `%APPDATA%\\<root>` on Windows and
+/// `~/Library/Application Support/<root>` on macOS.
+fn resolve_firefox_places(profile_root: &[&str]) -> Option<PathBuf> {
+    #[cfg(windows)]
+    let base = env("APPDATA", "");
+    #[cfg(not(windows))]
+    let base = mac_app_support();
+    let root = join(base, profile_root);
     let ini = std::fs::read_to_string(root.join("profiles.ini")).ok()?;
     let mut sections: Vec<Vec<&str>> = vec![];
     for line in ini.lines() {
@@ -152,4 +204,30 @@ fn resolve_firefox_places(profile_root: &str) -> Option<PathBuf> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use arclet_sdk::json;
+
+    #[test]
+    fn detects_installed_app_entries() {
+        #[cfg(not(windows))]
+        let (chrome, edge) = ("/Applications/Google Chrome.app", "/Applications/Microsoft Edge.app");
+        #[cfg(windows)]
+        let (chrome, edge) = ("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe");
+        assert_eq!(detect_key(&json!({"label": "Google Chrome", "value": chrome})), Some("chrome"));
+        assert_eq!(detect_key(&json!({"label": "Microsoft Edge", "value": edge})), Some("msedge"));
+        assert_eq!(detect_key(&json!({"label": "Firefox", "value": "x"})), Some("firefox"));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn mac_locations() {
+        let chrome = meta("chrome");
+        assert!(chrome.exe_candidates.contains(&PathBuf::from("/Applications/Google Chrome.app")));
+        assert!(chrome.history_path.unwrap().ends_with("Library/Application Support/Google/Chrome/Default/History"));
+        assert_eq!(meta("firefox").private_shortcut, "cmd shift p");
+    }
 }

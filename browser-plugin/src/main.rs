@@ -4,6 +4,7 @@
 
 mod browsers;
 mod data;
+mod native;
 
 use arclet_sdk::input::{self, InputExt};
 use arclet_sdk::{focus_app, json, send_keys, Action, Ctx, Error, Plugin, Result, Value};
@@ -52,20 +53,46 @@ fn send_browser_keys(browser: &str, keys: &str) -> Result {
     send_keys(keys)
 }
 
+/// Run `action` through the browser's own interface when it has one
+/// (`native.rs`), else press `keys`. Shortcuts are the last resort (CLAUDE.md).
+fn browser_action(browser: &str, action: &str, keys: &str) -> Result {
+    activate_browser(browser)?;
+    if native::try_run(browser, action) {
+        return Ok(());
+    }
+    send_keys(keys)
+}
+
 fn open_in_browser(browser: &str, url: &str) -> Result {
     let exe = ensure_executable(browser)?;
     let target = url.trim();
     if target.is_empty() {
         return Err(Error::msg("URL is required"));
     }
-    let mut cmd = Command::new(exe);
-    cmd.arg(target);
     #[cfg(windows)]
-    {
+    let mut cmd = {
         use std::os::windows::process::CommandExt;
+        let mut cmd = Command::new(exe);
+        cmd.arg(target);
         cmd.creation_flags(0x0800_0000 | 0x0000_0008); // CREATE_NO_WINDOW | DETACHED_PROCESS
-    }
-    cmd.spawn()?; // detached: the child is intentionally not waited on
+        cmd
+    };
+    // macOS: `exe` is a `.app` bundle; `open -a` launches it or hands the URL to the running one.
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut cmd = Command::new("/usr/bin/open");
+        cmd.arg("-a").arg(exe).arg(target);
+        cmd
+    };
+    let mut child = cmd.spawn()?;
+    // `open` exits at once; reap it so it doesn't linger as a zombie. On Windows the
+    // browser itself is the child and is intentionally not waited on.
+    #[cfg(not(windows))]
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    #[cfg(windows)]
+    let _ = &mut child;
     Ok(())
 }
 
@@ -78,9 +105,9 @@ enum Zoom {
 
 fn zoom_sequence(browser: &str, dir: Zoom, count: usize) -> Result {
     match dir {
-        Zoom::Reset => send_browser_keys(browser, "ctrl 0"),
+        Zoom::Reset => send_browser_keys(browser, "mod 0"),
         Zoom::In | Zoom::Out => {
-            let key = if matches!(dir, Zoom::In) { "ctrl equals" } else { "ctrl minus" };
+            let key = if matches!(dir, Zoom::In) { "mod equals" } else { "mod minus" };
             (0..count).try_for_each(|_| send_browser_keys(browser, key))
         }
     }
@@ -120,9 +147,9 @@ fn set_zoom_state(ctx: &Ctx, browser: &str, value: i64) {
 }
 
 /// A button that focuses the chosen browser and sends one key chord.
-fn basic_button(id: &str, label: &str, icon: &str, shortcut: fn(&Value) -> Result<String>) -> Action {
+fn basic_button(id: &'static str, label: &str, icon: &str, shortcut: fn(&Value) -> Result<String>) -> Action {
     Action::button(id, label).icon(icon).inputs(vec![browser_input()]).on_press(move |ctx| {
-        send_browser_keys(&browser_value(&ctx.inputs), &shortcut(&ctx.inputs)?)
+        browser_action(&browser_value(&ctx.inputs), id, &shortcut(&ctx.inputs)?)
     })
 }
 
@@ -155,8 +182,8 @@ fn hold_repeat(id: &str, label: &str, icon: &str, released: (&str, &str), held: 
         })
 }
 
-fn tab_step(keys: &'static str) -> impl Fn(&Value) -> Result {
-    move |inputs| send_browser_keys(&browser_value(inputs), keys)
+fn tab_step(action: &'static str, keys: &'static str) -> impl Fn(&Value) -> Result {
+    move |inputs| browser_action(&browser_value(inputs), action, keys)
 }
 
 fn zoom_step(dir: Zoom) -> impl Fn(&Value) -> Result {
@@ -198,37 +225,62 @@ fn link_wheel(id: &str, label: &str, icon: &str, child_prefix: &'static str, chi
         })
 }
 
+/// `windows` on Windows, `mac` on macOS.
+const fn per_os(windows: &'static str, mac: &'static str) -> &'static str {
+    if cfg!(windows) {
+        windows
+    } else {
+        mac
+    }
+}
+
+/// Windows chord (same in every browser), or the macOS chord for the selected browser's family.
+fn per_family(inputs: &Value, windows: &'static str, mac_chromium: &'static str, mac_firefox: &'static str) -> Result<&'static str> {
+    if cfg!(windows) {
+        return Ok(windows);
+    }
+    Ok(match meta(browser_key(inputs)?).family {
+        Family::Chromium => mac_chromium,
+        Family::Firefox => mac_firefox,
+    })
+}
+
+// Ctrl+Tab works in every macOS browser; Ctrl+PgDn needs fn on Mac keyboards.
+const NEXT_TAB: &str = per_os("ctrl pgdn", "ctrl tab");
+const PREV_TAB: &str = per_os("ctrl pgup", "ctrl shift tab");
+
 fn main() {
     let mut plugin = Plugin::new("browser-plugin", "BrowserPlugin")
         .version("1.0.0")
         .author("Arclet")
-        .description("Shared Chrome and Firefox browser controls, wheels, and zoom actions.")
+        .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows and macOS.")
         .icon("globe")
         .ack_timeout_ms(5000);
 
-    // (id, label, icon, shortcut)
+    // (id, label, icon, shortcut). `mod` is Ctrl on Windows and ⌘ on macOS; the
+    // chords that differ by more than that are picked per OS / browser family.
     type Shortcut = fn(&Value) -> Result<String>;
     let basics: Vec<(&str, &str, &str, Shortcut)> = vec![
-        ("new-tab", "New Tab", "notebook-tabs", |_| Ok("ctrl t".into())),
-        ("new-window", "New Window", "app-window", |_| Ok("ctrl n".into())),
+        ("new-tab", "New Tab", "notebook-tabs", |_| Ok("mod t".into())),
+        ("new-window", "New Window", "app-window", |_| Ok("mod n".into())),
         ("new-private-window", "New Private / Incognito Window", "app-window", |i| Ok(meta(browser_key(i)?).private_shortcut.into())),
-        ("close-tab", "Close Tab", "notebook-tabs", |_| Ok("ctrl w".into())),
-        ("reopen-closed-tab", "Reopen Closed Tab", "notebook-tabs", |_| Ok("ctrl shift t".into())),
-        ("next-tab", "Next Tab", "notebook-tabs", |_| Ok("ctrl pgdn".into())),
-        ("previous-tab", "Previous Tab", "notebook-tabs", |_| Ok("ctrl pgup".into())),
-        ("reload-tab", "Reload Tab", "refresh-cw", |_| Ok("ctrl r".into())),
+        ("close-tab", "Close Tab", "notebook-tabs", |_| Ok("mod w".into())),
+        ("reopen-closed-tab", "Reopen Closed Tab", "notebook-tabs", |_| Ok("mod shift t".into())),
+        ("next-tab", "Next Tab", "notebook-tabs", |_| Ok(NEXT_TAB.into())),
+        ("previous-tab", "Previous Tab", "notebook-tabs", |_| Ok(PREV_TAB.into())),
+        ("reload-tab", "Reload Tab", "refresh-cw", |_| Ok("mod r".into())),
         ("hard-reload-tab", "Hard Reload", "refresh-cw", |i| Ok(meta(browser_key(i)?).hard_reload_shortcut.into())),
-        ("go-back", "Back", "arrow-left", |_| Ok("alt left".into())),
-        ("go-forward", "Forward", "arrow-right", |_| Ok("alt right".into())),
-        ("focus-address-bar", "Focus Address Bar", "search", |_| Ok("ctrl l".into())),
-        ("open-downloads", "Open Downloads", "download", |_| Ok("ctrl j".into())),
-        ("open-history", "Open History", "history", |_| Ok("ctrl h".into())),
-        ("open-bookmarks-manager", "Open Bookmarks Manager", "bookmark", |_| Ok("ctrl shift o".into())),
-        ("bookmark-page", "Bookmark Page", "bookmark", |_| Ok("ctrl d".into())),
-        ("find-in-page", "Find in Page", "search", |_| Ok("ctrl f".into())),
-        ("print-page", "Print Page", "printer", |_| Ok("ctrl p".into())),
-        ("save-page", "Save Page", "save", |_| Ok("ctrl s".into())),
-        ("toggle-fullscreen", "Toggle Fullscreen", "maximize", |_| Ok("f11".into())),
+        ("go-back", "Back", "arrow-left", |_| Ok(per_os("alt left", "cmd lbracket").into())),
+        ("go-forward", "Forward", "arrow-right", |_| Ok(per_os("alt right", "cmd rbracket").into())),
+        ("focus-address-bar", "Focus Address Bar", "search", |_| Ok("mod l".into())),
+        ("open-downloads", "Open Downloads", "download", |i| Ok(per_family(i, "ctrl j", "cmd shift j", "cmd j")?.into())),
+        ("open-history", "Open History", "history", |i| Ok(per_family(i, "ctrl h", "cmd y", "cmd shift h")?.into())),
+        ("open-bookmarks-manager", "Open Bookmarks Manager", "bookmark", |i| Ok(per_family(i, "ctrl shift o", "cmd alt b", "cmd shift o")?.into())),
+        ("bookmark-page", "Bookmark Page", "bookmark", |_| Ok("mod d".into())),
+        ("find-in-page", "Find in Page", "search", |_| Ok("mod f".into())),
+        ("print-page", "Print Page", "printer", |_| Ok("mod p".into())),
+        ("save-page", "Save Page", "save", |_| Ok("mod s".into())),
+        ("toggle-fullscreen", "Toggle Fullscreen", "maximize", |_| Ok(per_os("f11", "ctrl cmd f").into())),
     ];
     for (id, label, icon, shortcut) in basics {
         plugin = plugin.action(basic_button(id, label, icon, shortcut));
@@ -250,7 +302,7 @@ fn main() {
         .action(Action::button("stop-loading", "Stop Loading").icon("stop.svg").inputs(vec![browser_input()]).on_press(|ctx| {
             // Fire-and-forget like the JS plugin: a failed Esc is logged, not surfaced.
             let key = browser_key(&ctx.inputs)?;
-            if let Err(e) = send_browser_keys(key, "esc") {
+            if let Err(e) = browser_action(key, "stop-loading", "esc") {
                 ctx.log(format!("stop-loading: {e}"));
             }
             Ok(())
@@ -261,8 +313,8 @@ fn main() {
                 .inputs(vec![browser_input(), input::text("url", "URL").placeholder("https://example.com")])
                 .on_press(|ctx| open_in_browser(&browser_value(&ctx.inputs), &ctx.input_str("url"))),
         )
-        .action(hold_repeat("hold-next-tab", "Hold Next Tab", "notebook-tabs", ("Idle", "chevron-right"), ("Cycling", "chevrons-right"), |i| tab_step("ctrl pgdn")(i)))
-        .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "notebook-tabs", ("Idle", "chevron-left"), ("Cycling", "chevrons-left"), |i| tab_step("ctrl pgup")(i)))
+        .action(hold_repeat("hold-next-tab", "Hold Next Tab", "notebook-tabs", ("Idle", "chevron-right"), ("Cycling", "chevrons-right"), |i| tab_step("next-tab", NEXT_TAB)(i)))
+        .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "notebook-tabs", ("Idle", "chevron-left"), ("Cycling", "chevrons-left"), |i| tab_step("previous-tab", PREV_TAB)(i)))
         .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom.svg", ("Idle", "zoom-in"), ("Zooming", "zoom-in"), |i| zoom_step(Zoom::In)(i)))
         .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom.svg", ("Idle", "zoom-out"), ("Zooming", "zoom-out"), |i| zoom_step(Zoom::Out)(i)))
         .action(

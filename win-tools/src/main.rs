@@ -245,6 +245,7 @@ mod app {
             .author("Arclet")
             .description("Advanced window management: snap, resize, transparency, always-on-top, per-app volume, and more.")
             .icon("app-window")
+            .platforms(&["windows"])
             // Several actions derive their state from the currently focused window.
             .subscribe(&["focus_changed"])
             // ── Queries ──
@@ -465,23 +466,28 @@ mod app {
             .action(snap_picker("dynamic-move-bottom-right-wheel", "Dynamic Move Bottom Right", "snap-bottomright.svg", reg(0.5, 0.5, 0.5, 0.5)))
             .action(picker_wheel("dynamic-custom-position-wheel", "Dynamic Custom Position", "move.svg", custom_position_inputs(), |ctx, w| apply_custom_position(w, &ctx.inputs)));
 
-        // ── Virtual Desktops & System (Windows shell shortcuts) ──
+        // ── Virtual Desktops & System ──
+        // Shell objects / URIs / programs through ShellExecute; keystrokes only where
+        // Windows has no API (see CLAUDE.md).
         p = p
+            // No public API switches, creates or closes virtual desktops (the internal COM
+            // interfaces change between Windows builds); Win+Ctrl chords are reserved by the shell.
             .action(keys_button("desktop-previous", "Previous Desktop", "chevrons-left", "ctrl win left"))
             .action(keys_button("desktop-next", "Next Desktop", "chevrons-right", "ctrl win right"))
             .action(keys_button("desktop-new", "New Desktop", "copy-plus", "ctrl win d"))
             .action(keys_button("desktop-close", "Close Desktop", "copy-x", "ctrl win f4"))
-            .action(keys_button("task-view", "Task View", "layout-grid", "win tab"))
-            .action(keys_button("show-desktop", "Show Desktop", "monitor", "win d"))
-            .action(keys_button("screen-snip", "Screen Snip", "scissors", "win shift s"))
-            .action(keys_button("file-explorer", "File Explorer", "folder-open", "win e"))
-            .action(keys_button("open-settings", "Windows Settings", "settings", "win i"))
-            .action(keys_button("run-dialog", "Run Dialog", "square-terminal", "win r"))
+            .action(shell_button("task-view", "Task View", "layout-grid", "shell:::{3080F90E-D7AD-11D9-BD98-0000947B0257}"))
+            .action(shell_button("show-desktop", "Show Desktop", "monitor", "shell:::{3080F90D-D7AD-11D9-BD98-0000947B0257}"))
+            .action(shell_button("screen-snip", "Screen Snip", "scissors", "ms-screenclip:"))
+            .action(shell_button("file-explorer", "File Explorer", "folder-open", "explorer.exe"))
+            .action(shell_button("open-settings", "Windows Settings", "settings", "ms-settings:"))
+            .action(shell_button("run-dialog", "Run Dialog", "square-terminal", "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}"))
+            // No API opens the emoji panel; Win+. is reserved by the shell.
             .action(keys_button("emoji-panel", "Emoji Panel", "smile", "win period"))
-            .action(keys_button("task-manager", "Task Manager", "activity", "ctrl shift esc"))
+            .action(shell_button("task-manager", "Task Manager", "activity", "taskmgr.exe"))
             // A plain button (opens Task Manager) whose tile shows the chosen stat live.
             .action(
-                keys_button("system-stats", "System Stats", "gauge", "ctrl shift esc")
+                shell_button("system-stats", "System Stats", "gauge", "taskmgr.exe")
                     .inputs(vec![input::select("stat", "Show", &[("cpu", "CPU"), ("gpu", "GPU"), ("memory", "Memory")]).with("default", "cpu")])
                     .live(std::time::Duration::from_secs(1), |ic| {
                         let (name, pct) = stats::read(&ic.input_str("stat"))?;
@@ -556,7 +562,13 @@ mod app {
             })
     }
 
-    /// A button that presses a Windows shell shortcut through the host.
+    /// A button that opens a shell target (URI, `shell:::{CLSID}`, program).
+    fn shell_button(id: &str, label: &str, icon: &str, target: &'static str) -> Action {
+        Action::button(id, label).icon(icon).on_press(move |_| win32::shell_open(target))
+    }
+
+    /// A button that presses a Windows shell shortcut through the host. Last
+    /// resort only: use it when no API or shell target does the job (see CLAUDE.md).
     fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
         Action::button(id, label).icon(icon).on_press(move |_| arclet_sdk::send_keys(keys))
     }

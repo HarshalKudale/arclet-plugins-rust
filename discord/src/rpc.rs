@@ -104,10 +104,51 @@ mod conn {
 
     pub struct Conn(UnixStream);
 
+    /// macOS per-user temp dir (`/var/folders/…/T/`), where Discord puts its
+    /// socket. Read from the OS so it works when `TMPDIR` wasn't inherited
+    /// (e.g. Arclet launched by launchd).
+    #[cfg(target_os = "macos")]
+    fn darwin_user_temp_dir() -> Option<String> {
+        extern "C" {
+            fn confstr(name: i32, buf: *mut std::ffi::c_char, len: usize) -> usize;
+        }
+        const CS_DARWIN_USER_TEMP_DIR: i32 = 65537;
+        let mut buf = vec![0u8; 1024];
+        let n = unsafe { confstr(CS_DARWIN_USER_TEMP_DIR, buf.as_mut_ptr().cast(), buf.len()) };
+        if n == 0 || n > buf.len() {
+            return None;
+        }
+        buf.truncate(n - 1); // drop the NUL
+        String::from_utf8(buf).ok()
+    }
+
+    /// Every directory Discord may have put `discord-ipc-N` in, most likely first.
+    pub fn socket_dirs() -> Vec<String> {
+        let mut dirs: Vec<String> = ["XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"].iter().filter_map(|k| std::env::var(k).ok()).filter(|d| !d.is_empty()).collect();
+        #[cfg(target_os = "macos")]
+        dirs.extend(darwin_user_temp_dir());
+        dirs.push("/tmp".into());
+        let mut seen = Vec::new();
+        dirs.retain(|d| {
+            let d = d.trim_end_matches('/').to_string();
+            !seen.contains(&d) && {
+                seen.push(d);
+                true
+            }
+        });
+        dirs
+    }
+
     impl Conn {
         pub fn open(id: u32) -> io::Result<Conn> {
-            let prefix = ["XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"].iter().find_map(|k| std::env::var(k).ok()).unwrap_or_else(|| "/tmp".into());
-            UnixStream::connect(format!("{}/discord-ipc-{id}", prefix.trim_end_matches('/'))).map(Conn)
+            let mut last = io::Error::new(io::ErrorKind::NotFound, "no Discord IPC socket");
+            for dir in socket_dirs() {
+                match UnixStream::connect(format!("{}/discord-ipc-{id}", dir.trim_end_matches('/'))) {
+                    Ok(s) => return Ok(Conn(s)),
+                    Err(e) => last = e,
+                }
+            }
+            Err(last)
         }
         pub fn try_clone(&self) -> io::Result<Conn> {
             self.0.try_clone().map(Conn)
@@ -331,5 +372,13 @@ mod tests {
         let err = rpc.request("GET_VOICE_SETTINGS", Value::Null).unwrap_err();
         assert!(err.code.is_some(), "expected a Discord error code, got {err}");
         rpc.close();
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn mac_socket_dirs_include_user_temp_dir() {
+        let dirs = conn::socket_dirs();
+        assert!(dirs.iter().any(|d| d.starts_with("/var/folders/") || d.starts_with("/private/var/folders/")), "{dirs:?}");
+        assert_eq!(dirs.last().map(String::as_str), Some("/tmp"));
     }
 }

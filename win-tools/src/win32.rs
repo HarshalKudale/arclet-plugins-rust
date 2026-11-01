@@ -469,6 +469,21 @@ pub fn move_to_region(hwnd: Hwnd, work: Rect, r: Region) {
     set_window_bounds(hwnd, work.x + f(work.width, r.x), work.y + f(work.height, r.y), f(work.width, r.w), f(work.height, r.h));
 }
 
+/// Open a shell target (URI, `shell:::{CLSID}` object, or program) the way
+/// Explorer does: `ShellExecuteW(open)`. Handles UAC for elevated programs
+/// (Task Manager), which a plain CreateProcess refuses.
+pub fn shell_open(target: &str) -> Result {
+    use windows::core::{w, HSTRING};
+    use windows::Win32::UI::Shell::ShellExecuteW;
+    let r = unsafe { ShellExecuteW(None, w!("open"), &HSTRING::from(target), None, None, SW_SHOWNORMAL) };
+    // ShellExecute returns a value > 32 on success.
+    if r.0 as isize > 32 {
+        Ok(())
+    } else {
+        Err(Error::msg(format!("Couldn't open {target} (error {})", r.0 as isize)))
+    }
+}
+
 pub fn lock_workstation() -> Result {
     unsafe { windows::Win32::System::Shutdown::LockWorkStation() }.map_err(|e| win_err("LockWorkStation", e))
 }

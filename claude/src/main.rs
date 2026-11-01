@@ -1,36 +1,42 @@
-//! claude — a dial/deck UI for the Claude Code sessions already running on this PC.
+//! claude — a dial/deck UI for the Claude Code sessions already running on this computer
+//! (Windows and macOS).
 //!
 //! Read-only over Claude's local state (`~/.claude`): it never calls a model and never
 //! sends prompts. The only input it ever types into a session is the `/rc` command that
 //! turns Remote Control on.
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 fn main() {
-    eprintln!("the claude plugin only runs on Windows");
+    eprintln!("the claude plugin runs on Windows and macOS");
     std::process::exit(1);
 }
 
+/// OS backend: process tree, session windows, focus, terminals.
 #[cfg(windows)]
-mod sessions;
-#[cfg(windows)]
-mod usage;
-#[cfg(windows)]
-mod win;
+#[path = "win.rs"]
+mod os;
+#[cfg(target_os = "macos")]
+#[path = "mac.rs"]
+mod os;
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
+mod sessions;
+#[cfg(any(windows, target_os = "macos"))]
+mod usage;
+
+#[cfg(any(windows, target_os = "macos"))]
 fn main() {
     app::run()
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod app {
     use crate::sessions::{self, folder_name, Session, Status};
-    use crate::{usage, win};
+    use crate::{os, usage};
     use arclet_sdk::input::{self, InputExt};
     use arclet_sdk::{json, log, Action, Ctx, Plugin, Result, Value, Visual};
     use base64::Engine;
     use std::collections::HashMap;
-    use std::process::Command;
     use std::sync::Mutex;
     use std::time::Duration;
 
@@ -68,16 +74,15 @@ mod app {
         sessions::sessions().into_iter().find(|s| s.id == id)
     }
 
-    /// Open a URL with the default handler without going through a shell.
     fn open_url(url: &str) -> Result {
-        Command::new("rundll32").args(["url.dll,FileProtocolHandler", url]).spawn()?;
+        os::open_url(url)?;
         Ok(())
     }
 
     fn focus(ctx: &Ctx, s: &Session) -> Result {
-        match s.window {
+        match &s.window {
             Some(w) => {
-                win::bring_to_front(w);
+                os::focus(w);
                 Ok(())
             }
             None => ctx.fail(format!("Can't find the window hosting \"{}\"", s.name)),
@@ -93,18 +98,23 @@ mod app {
         if !s.alive() {
             return ctx.fail(format!("\"{}\" is not running", s.name));
         }
-        let Some(w) = s.window else { return ctx.fail(format!("Can't find the window hosting \"{}\"", s.name)) };
-        if win::foreground() != w {
+        let Some(w) = &s.window else { return ctx.fail(format!("Can't find the window hosting \"{}\"", s.name)) };
+        if !os::front().shows(w) {
             // Typing into a shared window would hit whichever tab is active, maybe another session.
             if s.shared_window {
                 return ctx.fail(format!("Several sessions share this window — switch to \"{}\"'s tab, then press Remote Control", s.name));
             }
-            win::bring_to_front(w);
+            os::focus(w);
             std::thread::sleep(Duration::from_millis(350));
-            if win::foreground() != w {
+            if !os::front().shows(w) {
                 return ctx.fail("Couldn't bring the session's window to the front");
             }
         }
+        // Typed on purpose (CLAUDE.md allows keystrokes for text entry): Claude Code's
+        // only connection point, the messaging socket, accepts user messages but has no
+        // Remote Control command, and terminal scripting (Terminal `do script`, iTerm
+        // `write text`) sends text + Return in one burst that Claude Code can take as a
+        // paste instead of picking `/rc` from its command menu.
         for k in ["slash", "r", "c"] {
             ctx.send_keys(k)?;
         }
@@ -116,7 +126,8 @@ mod app {
         !id.is_empty() && id.chars().all(|c| c.is_ascii_hexdigit() || c == '-')
     }
 
-    /// Resume a past session in a new terminal (Windows Terminal if present, else a console).
+    /// Resume a past session in a new terminal (Windows Terminal / a console on
+    /// Windows, Terminal.app on macOS).
     fn resume_in_terminal(ctx: &Ctx, id: &str, cwd: &str, remote: bool) -> Result {
         if !valid_id(id) {
             return ctx.fail("Invalid session id in history");
@@ -124,15 +135,11 @@ mod app {
         if !std::path::Path::new(cwd).is_dir() {
             return ctx.fail(format!("Project folder no longer exists: {cwd}"));
         }
-        let mut claude = vec!["claude", "--resume", id];
+        let mut args = vec!["--resume", id];
         if remote {
-            claude.push("--remote-control");
+            args.push("--remote-control");
         }
-        let wt = Command::new("wt.exe").args(["-d", cwd]).args(&claude).spawn();
-        if wt.is_err() {
-            // cwd via current_dir, not the command line, so a path can't be parsed by cmd.
-            Command::new("cmd").args(["/c", "start", "", "cmd", "/k"]).args(&claude).current_dir(cwd).spawn()?;
-        }
+        os::run_in_terminal(cwd, &args)?;
         Ok(())
     }
 
@@ -175,6 +182,7 @@ mod app {
             .author("Arclet")
             .description("See and switch between running Claude Code sessions, turn on Remote Control, view usage and reopen recent sessions. Read-only: no prompts, no AI calls.")
             .icon("bot")
+            .platforms(&["windows", "macos"])
             // ── Running sessions (dynamic wheel + live status dots on the tile) ──
             .action(
                 Action::wheel("sessions", "Claude Sessions")
@@ -289,7 +297,7 @@ mod app {
             .on_ready(|rt| {
                 // Claude Code rewrites sessions/<pid>.json on every status change: push it at once.
                 let rt = rt.clone();
-                std::thread::spawn(move || win::watch_dir(&sessions::claude_dir().join("sessions"), || rt.notify_visual("sessions", sessions_visual())));
+                std::thread::spawn(move || os::watch_dir(&sessions::claude_dir().join("sessions"), || rt.notify_visual("sessions", sessions_visual())));
                 std::thread::spawn(|| loop {
                     let t = std::time::Instant::now();
                     usage::refresh();

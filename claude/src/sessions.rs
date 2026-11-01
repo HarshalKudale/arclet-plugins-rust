@@ -2,7 +2,7 @@
 //! `sessions/<pid>.json` (live sessions, written by each running Claude Code),
 //! `history.jsonl` (prompt history → recent sessions) and the transcripts under `projects/`.
 
-use crate::win::{self, Hwnd};
+use crate::os::{self, Window};
 use arclet_sdk::Value;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -12,7 +12,8 @@ pub fn claude_dir() -> PathBuf {
     if let Some(d) = std::env::var_os("CLAUDE_CONFIG_DIR") {
         return d.into();
     }
-    PathBuf::from(std::env::var_os("USERPROFILE").unwrap_or_default()).join(".claude")
+    let home = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
+    PathBuf::from(std::env::var_os(home).unwrap_or_default()).join(".claude")
 }
 
 pub fn now_ms() -> u64 {
@@ -63,8 +64,9 @@ pub struct Session {
     /// Remote Control session id (`session_…`) while Remote Control is on.
     pub bridge: Option<String>,
     pub updated: u64,
-    pub window: Option<Hwnd>,
-    /// Another live session lives in the same window (e.g. two Windows Terminal tabs).
+    pub window: Option<Window>,
+    /// Another live session lives in the same window and can't be told apart
+    /// (e.g. two Windows Terminal tabs, two VS Code terminals).
     pub shared_window: bool,
 }
 
@@ -104,8 +106,7 @@ const STOPPED_FOR_MS: u64 = 6 * 3600 * 1000;
 /// Live sessions (plus recently crashed ones), most recently active first.
 pub fn sessions() -> Vec<Session> {
     let Ok(dir) = std::fs::read_dir(claude_dir().join("sessions")) else { return vec![] };
-    let tree = win::process_tree();
-    let wins = win::windows_by_pid();
+    let procs = os::snapshot();
     let now = now_ms();
     let mut out: Vec<Session> = dir
         .flatten()
@@ -116,9 +117,8 @@ pub fn sessions() -> Vec<Session> {
             let id = v["sessionId"].as_str()?.to_string();
             let cwd = v["cwd"].as_str().unwrap_or("").to_string();
             let updated = v["updatedAt"].as_u64().or(v["startedAt"].as_u64()).unwrap_or(0);
-            let proc_start: Option<u64> = v["procStart"].as_str().and_then(|s| s.parse().ok());
             // A pid alone can be reused; the creation time pins it to this session.
-            let alive = win::started_at(pid).map_or(false, |t| proc_start.map_or(true, |p| p == t));
+            let alive = os::alive(pid, &v["procStart"]);
             let text = |k: &str| v[k].as_str().filter(|s| !s.is_empty()).map(String::from);
             let blocked = matches!(v["state"].as_str(), Some("blocked" | "failed"));
             let status = match (alive, v["status"].as_str()) {
@@ -139,13 +139,13 @@ pub fn sessions() -> Vec<Session> {
             }
             let name = v["name"].as_str().map(String::from).unwrap_or_else(|| folder_name(&cwd));
             let bridge = v["bridgeSessionId"].as_str().filter(|b| b.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')).map(String::from);
-            let window = alive.then(|| win::host_window(pid, &tree, &wins)).flatten();
+            let window = alive.then(|| os::host_window(pid, &procs)).flatten();
             Some(Session { id, name, cwd, status, detail, bridge, updated, window, shared_window: false })
         })
         .collect();
-    let windows: Vec<Hwnd> = out.iter().filter_map(|s| s.window).collect();
+    let windows: Vec<Window> = out.iter().filter_map(|s| s.window.clone()).collect();
     for s in &mut out {
-        s.shared_window = s.window.map_or(false, |w| windows.iter().filter(|&&x| x == w).count() > 1);
+        s.shared_window = s.window.as_ref().map_or(false, |w| windows.iter().filter(|x| *x == w).count() > 1);
     }
     out.sort_by(|a, b| b.updated.cmp(&a.updated));
     out
@@ -153,8 +153,8 @@ pub fn sessions() -> Vec<Session> {
 
 /// The session the user is looking at (its window is in front), else the most recently active one.
 pub fn focused_or_latest(list: &[Session]) -> Option<&Session> {
-    let fg = win::foreground();
-    list.iter().filter(|s| s.alive()).find(|s| s.window == Some(fg)).or_else(|| list.iter().find(|s| s.alive()))
+    let front = os::front();
+    list.iter().filter(|s| s.alive()).find(|s| s.window.as_ref().is_some_and(|w| front.shows(w))).or_else(|| list.iter().find(|s| s.alive()))
 }
 
 pub fn folder_name(path: &str) -> String {
@@ -215,6 +215,18 @@ mod tests {
         let r = parse_recent(&h, 2);
         assert_eq!(r.iter().map(|x| x.id.as_str()).collect::<Vec<_>>(), ["s3", "s2"]);
         assert_eq!(r[1].label, "fix the bug");
+    }
+
+    /// Against this machine's ~/.claude: `cargo test -p claude -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn live_sessions_smoke() {
+        for s in sessions() {
+            println!("{} [{}] {:?} window={:?} shared={}", s.name, s.status.word(), s.detail, s.window, s.shared_window);
+        }
+        if let Some(s) = focused_or_latest(&sessions()) {
+            println!("focused or latest: {}", s.name);
+        }
     }
 
     #[test]
