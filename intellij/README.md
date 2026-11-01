@@ -1,6 +1,6 @@
-# IntelliJ IDE Plugin for Arclet
+# IntelliJ IDE Plugin for KnobDeck
 
-Arclet companion plugin for IntelliJ-based IDEs. It mirrors the JetBrains Stream Deck plugin action surface and talks to the **Arclet IntelliJ Companion** IDE plugin over a local HTTP action server.
+KnobDeck companion plugin for IntelliJ-based IDEs. It mirrors the JetBrains Stream Deck plugin action surface and talks to the **KnobDeck IntelliJ Companion** IDE plugin over a local HTTP action server.
 
 ## Included actions
 
@@ -24,12 +24,12 @@ Arclet companion plugin for IntelliJ-based IDEs. It mirrors the JetBrains Stream
 
 ## Setup
 
-1. Install the **Arclet IntelliJ Companion** plugin into IntelliJ IDEA / Android Studio / WebStorm / other JetBrains IDEs.
-2. In the IDE open **Settings → Tools → Arclet**.
+1. Install the **KnobDeck IntelliJ Companion** plugin into IntelliJ IDEA / Android Studio / WebStorm / other JetBrains IDEs.
+2. In the IDE open **Settings → Tools → KnobDeck**.
 3. Enable the action service and choose the port/password.
-4. Run the Arclet plugin setup and enter the same host/port/password.
+4. Run the KnobDeck plugin setup and enter the same host/port/password.
 
-The Arclet plugin then calls the companion with requests like:
+The KnobDeck plugin then calls the companion with requests like:
 
 `http://127.0.0.1:21420/api/action/SearchEverywhere`
 

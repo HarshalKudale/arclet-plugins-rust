@@ -1,11 +1,11 @@
-//! OBS Studio plugin for Arclet — controls OBS via obs-websocket v5.
+//! OBS Studio plugin for KnobDeck — controls OBS via obs-websocket v5.
 //!
 //! Config: run the plugin setup flow (or write `.env` with OBS_HOST / OBS_PORT / OBS_PASSWORD).
 
 mod obs_ws;
 
-use arclet_sdk::input::{self, InputExt};
-use arclet_sdk::{env_or, json, load_env, log, Action, Ctx, Plugin, Result, Runtime, Value};
+use knobdeck_sdk::input::{self, InputExt};
+use knobdeck_sdk::{env_or, json, load_env, log, Action, Ctx, Plugin, Result, Runtime, Value};
 use obs_ws::{call, connected};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
@@ -262,10 +262,10 @@ fn name_list(v: &Value, list: &str) -> Vec<Value> {
     v[list].as_array().map(|a| a.iter().map(|i| json!({"value": i, "label": i})).collect()).unwrap_or_default()
 }
 
-fn query(f: impl Fn(&arclet_sdk::QueryCtx) -> Result<Vec<Value>> + Send + Sync + 'static) -> impl Fn(&arclet_sdk::QueryCtx) -> Result<Value> + Send + Sync + 'static {
+fn query(f: impl Fn(&knobdeck_sdk::QueryCtx) -> Result<Vec<Value>> + Send + Sync + 'static) -> impl Fn(&knobdeck_sdk::QueryCtx) -> Result<Value> + Send + Sync + 'static {
     move |ctx| {
         if !connected() {
-            return Err(arclet_sdk::Error::msg("OBS is not connected"));
+            return Err(knobdeck_sdk::Error::msg("OBS is not connected"));
         }
         f(ctx).map(Value::Array)
     }
@@ -284,13 +284,13 @@ fn main() {
 
     // Kick off the first connection immediately so the cache may be warm by the first sync
     // (not under codegen, where Plugin::run() exits before anything is needed).
-    if std::env::var("ARCLET_CODEGEN").as_deref() != Ok("1") {
+    if std::env::var("KNOBDECK_CODEGEN").as_deref() != Ok("1") {
         std::thread::spawn(move || obs_ws::run(host, port, password, sync_obs_state, on_event, on_closed));
     }
 
     Plugin::new("obs", "OBS Studio")
         .version("1.0.0")
-        .author("Arclet")
+        .author("KnobDeck")
         .description("Control OBS Studio — record, stream, scenes, sources & more.")
         .icon("obs-logo.svg")
         .ack_timeout_ms(5000)

@@ -76,7 +76,7 @@
 <body>
   <form class="card" id="setup-form">
     <h1>VLC Setup</h1>
-    <p>Connect Arclet to VLC’s built-in HTTP interface.</p>
+    <p>Connect KnobDeck to VLC’s built-in HTTP interface.</p>
     <div class="steps">
       <b>Before saving:</b> in VLC open <b>Tools → Preferences → Show Settings: All → Interface → Main interfaces</b>, enable <b>Web</b>, then set a password under <b>Main interfaces → Lua → Lua HTTP</b>.
     </div>
@@ -117,7 +117,7 @@
       button.disabled = true;
       setStatus('Verifying VLC connection...');
       window.parent.postMessage({
-        source: 'arclet-setup-page',
+        source: 'knobdeck-setup-page',
         type: 'setup-submit',
         values: {
           host: host.value.trim(),
@@ -129,7 +129,7 @@
 
     window.addEventListener('message', (event) => {
       const data = event && event.data;
-      if (!data || data.source !== 'arclet-host') return;
+      if (!data || data.source !== 'knobdeck-host') return;
       if (data.type === 'setup-complete') {
         setStatus('VLC setup saved.');
         button.disabled = false;

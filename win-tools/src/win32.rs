@@ -2,7 +2,7 @@
 //! handle (raw `isize`) defaulting to the foreground window, so the same code
 //! drives the "current window" actions and the window-picker wheels.
 
-use arclet_sdk::{Error, Result};
+use knobdeck_sdk::{Error, Result};
 use std::collections::HashMap;
 use std::ffi::c_void;
 use windows::core::PWSTR;
@@ -225,9 +225,9 @@ unsafe extern "system" fn window_cb(hwnd: HWND, data: LPARAM) -> BOOL {
     TRUE
 }
 
-// Arclet's own helper windows (overlay, tray…) must not list themselves as switch targets.
-const ARCLET_EXE_NAME: &str = "arclet-app.exe";
-const ARCLET_MAIN_WINDOW_TITLE: &str = "Arclet — Wheel Editor";
+// KnobDeck's own helper windows (overlay, tray…) must not list themselves as switch targets.
+const KNOBDECK_EXE_NAME: &str = "knobdeck-app.exe";
+const KNOBDECK_MAIN_WINDOW_TITLE: &str = "KnobDeck — Wheel Editor";
 
 /// Every open top-level window, in Z-order (topmost first).
 pub fn list_open_windows() -> Vec<OpenWindow> {
@@ -244,7 +244,7 @@ pub fn list_open_windows() -> Vec<OpenWindow> {
             }
             let pid = window_process_id(hwnd);
             let exe_name = names.get(&pid).cloned();
-            let internal = exe_name.as_deref().map_or(false, |e| e.eq_ignore_ascii_case(ARCLET_EXE_NAME)) && title != ARCLET_MAIN_WINDOW_TITLE;
+            let internal = exe_name.as_deref().map_or(false, |e| e.eq_ignore_ascii_case(KNOBDECK_EXE_NAME)) && title != KNOBDECK_MAIN_WINDOW_TITLE;
             (!internal).then_some(OpenWindow { hwnd, title, pid, exe_name })
         })
         .collect()

@@ -1,10 +1,10 @@
 //! OBS setup: save the connection details collected by the setup page to `.env`.
 
 fn main() {
-    arclet_sdk::run_setup(|ctx| {
+    knobdeck_sdk::run_setup(|ctx| {
         // JS `inputs.x ?? default`: only a missing/null field takes the default.
         let get = |key: &str, default: &str| match ctx.inputs.get(key) {
-            None | Some(arclet_sdk::Value::Null) => default.to_string(),
+            None | Some(knobdeck_sdk::Value::Null) => default.to_string(),
             Some(_) => ctx.input_str(key).trim().to_string(),
         };
         let (host, port, password) = (get("host", "localhost"), get("port", "4455"), get("password", ""));

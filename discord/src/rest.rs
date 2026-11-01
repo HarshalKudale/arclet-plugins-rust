@@ -1,7 +1,7 @@
 //! Discord REST helpers (soundboard). Bearer token from the stored RPC token; 30 s cache.
 
 use crate::common::load_token;
-use arclet_sdk::{Error, Result, Value};
+use knobdeck_sdk::{Error, Result, Value};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -24,7 +24,7 @@ fn get(endpoint: &str, no_auth: bool) -> Result<Value> {
     };
     let parse = |r: ureq::Response| r.into_json::<Value>().map_err(|e| Error::msg(format!("REST parse error: {e}")));
     let data = loop {
-        let mut req = ureq::get(&format!("{API_BASE}{endpoint}")).set("User-Agent", "ArcletDiscordPlugin/1.0").timeout(Duration::from_secs(10));
+        let mut req = ureq::get(&format!("{API_BASE}{endpoint}")).set("User-Agent", "KnobDeckDiscordPlugin/1.0").timeout(Duration::from_secs(10));
         if let Some(t) = &token {
             req = req.set("Authorization", &format!("Bearer {t}"));
         }

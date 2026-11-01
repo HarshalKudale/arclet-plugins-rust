@@ -6,6 +6,6 @@ publish = false
 build = "build.rs"
 
 [dependencies]
-arclet-sdk.workspace = true
+knobdeck-sdk.workspace = true
 ureq.workspace = true
 serde_json.workspace = true

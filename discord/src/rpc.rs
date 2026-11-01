@@ -106,7 +106,7 @@ mod conn {
 
     /// macOS per-user temp dir (`/var/folders/…/T/`), where Discord puts its
     /// socket. Read from the OS so it works when `TMPDIR` wasn't inherited
-    /// (e.g. Arclet launched by launchd).
+    /// (e.g. KnobDeck launched by launchd).
     #[cfg(target_os = "macos")]
     fn darwin_user_temp_dir() -> Option<String> {
         extern "C" {

@@ -1,11 +1,11 @@
-# Arclet plugins (Rust) — working rules
+# KnobDeck plugins (Rust) — working rules
 
-Rust plugins for Arclet, built on `arclet-sdk` (`../arclet-sdk-rust`). Arclet runs on **Windows
+Rust plugins for KnobDeck, built on `knobdeck-sdk` (`../knobdeck-sdk-rust`). KnobDeck runs on **Windows
 and macOS**; see README.md for the plugin list, build and packaging.
 
 ## Rule 1: keystrokes are the last resort
 
-Applies to every plugin and to Arclet's built-in actions (`../arclet/CLAUDE.md` has the host copy).
+Applies to every plugin and to KnobDeck's built-in actions (`../knobdeck/CLAUDE.md` has the host copy).
 Do **not** implement an action by sending a keyboard shortcut (`send_keys`, `ctx.send_keys`,
 `keys_button`, posting CGEvents/SendInput) when a stable OS or app route exists. Shortcuts are
 fragile:

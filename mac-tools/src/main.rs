@@ -1,4 +1,4 @@
-//! mac-tools — window management and system tools for Arclet on macOS; the
+//! mac-tools — window management and system tools for KnobDeck on macOS; the
 //! macOS counterpart of win-tools.
 //!
 //! Current Window (minimise / fill / restore / close / native full screen),
@@ -7,7 +7,7 @@
 //! Control / system shortcuts, live system stats, audio device switching and
 //! microphone mute, and a clipboard history.
 //!
-//! Window control goes through the Accessibility API (Arclet's permission).
+//! Window control goes through the Accessibility API (KnobDeck's permission).
 //! What macOS doesn't allow for other apps' windows (always on top, opacity,
 //! click-through, borderless, send to back, per-app volume) is left out
 //! rather than faked.
@@ -46,8 +46,8 @@ mod app {
     use crate::screens::{self, Display};
     use crate::system::{self, Dock, Hotkey};
     use crate::{audio, clipboard, icon, stats, windows};
-    use arclet_sdk::input::{self, InputExt};
-    use arclet_sdk::{json, Action, Ctx, Error, Plugin, Result, Value, Visual};
+    use knobdeck_sdk::input::{self, InputExt};
+    use knobdeck_sdk::{json, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
     use std::process::Command;
     use std::sync::Mutex;
@@ -333,7 +333,7 @@ mod app {
     /// A button that presses a shortcut through the host. Last resort only:
     /// use it when no OS call does the job (see CLAUDE.md).
     fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
-        Action::button(id, label).icon(icon).on_press(move |_| arclet_sdk::send_keys(keys))
+        Action::button(id, label).icon(icon).on_press(move |_| knobdeck_sdk::send_keys(keys))
     }
 
     /// `open -b <bundle id>`: launches the app or brings it forward.
@@ -391,7 +391,7 @@ mod app {
     pub fn run() -> ! {
         let mut p = Plugin::new("mac-tools", "Mac Tools")
             .version("1.0.0")
-            .author("Arclet")
+            .author("KnobDeck")
             .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute and clipboard history.")
             .icon("app-window")
             .platforms(&["macos"])
@@ -558,7 +558,7 @@ mod app {
                     clipboard::start();
                     let items = clipboard::list();
                     if items.is_empty() {
-                        return ctx.fail("Clipboard history is empty — copy something first (history is kept while Arclet runs)");
+                        return ctx.fail("Clipboard history is empty — copy something first (history is kept while KnobDeck runs)");
                     }
                     let mut map = HashMap::new();
                     let slices = items
@@ -636,11 +636,11 @@ mod app {
             eprintln!("focused: {} {:?} filled={}", f.title(), f.frame(), is_filled(&f));
         }
 
-        /// Moves, resizes, fills and closes a window titled `arclet-ax-test` (create one first).
+        /// Moves, resizes, fills and closes a window titled `knobdeck-ax-test` (create one first).
         #[test]
         #[ignore]
         fn live_window_ops() {
-            let w = windows::list_open_windows().into_iter().find(|w| w.title.contains("arclet-ax-test")).expect("arclet-ax-test window").elem;
+            let w = windows::list_open_windows().into_iter().find(|w| w.title.contains("knobdeck-ax-test")).expect("knobdeck-ax-test window").elem;
             let work = work_area(&w).unwrap();
             snap(&w, &json!({"monitor": "current"}), reg(0.0, 0.0, 0.5, 0.5)).unwrap();
             let f = w.frame().unwrap();

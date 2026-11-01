@@ -1,6 +1,6 @@
 //! Pure helpers for labelling and picking Discord objects.
 
-use arclet_sdk::Value;
+use knobdeck_sdk::Value;
 
 fn s<'a>(v: &'a Value, k: &str) -> Option<&'a str> {
     v[k].as_str().filter(|x| !x.is_empty())
@@ -50,7 +50,7 @@ pub fn format_device_label(d: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arclet_sdk::json;
+    use knobdeck_sdk::json;
 
     #[test]
     fn labels_and_picking() {

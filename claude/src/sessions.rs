@@ -3,7 +3,7 @@
 //! `history.jsonl` (prompt history → recent sessions) and the transcripts under `projects/`.
 
 use crate::os::{self, Window};
-use arclet_sdk::Value;
+use knobdeck_sdk::Value;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -231,6 +231,6 @@ mod tests {
 
     #[test]
     fn project_dir_encoding() {
-        assert!(project_dir("I:\\workspace\\Arclet-workspace").ends_with("I--workspace-Arclet-workspace"));
+        assert!(project_dir("I:\\workspace\\KnobDeck-workspace").ends_with("I--workspace-KnobDeck-workspace"));
     }
 }

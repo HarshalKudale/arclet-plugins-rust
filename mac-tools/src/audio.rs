@@ -2,7 +2,7 @@
 //! microphone. (Per-app volume, which Win Tools offers, needs an audio driver
 //! on macOS, so it is not part of Mac Tools.)
 
-use arclet_sdk::{Error, Result};
+use knobdeck_sdk::{Error, Result};
 use core_foundation::base::TCFType;
 use core_foundation::string::{CFString, CFStringRef};
 use std::ffi::c_void;

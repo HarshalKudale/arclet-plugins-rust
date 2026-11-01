@@ -1,6 +1,6 @@
 # Zoom
 
-Control Zoom meetings from Arclet using Zoom's local meeting API.
+Control Zoom meetings from KnobDeck using Zoom's local meeting API.
 
 ## What it does
 
@@ -13,4 +13,4 @@ Control Zoom meetings from Arclet using Zoom's local meeting API.
 
 1. Keep Zoom installed and signed in.
 2. Join a meeting so Zoom's local API is available.
-3. Use Arclet actions during the meeting for quick control.
+3. Use KnobDeck actions during the meeting for quick control.

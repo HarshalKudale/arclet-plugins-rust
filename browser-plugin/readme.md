@@ -1,6 +1,6 @@
 # Browser Plugin
 
-Shared browser controls for Arclet across Chrome, Edge, Brave, Firefox, and Zen, on Windows and
+Shared browser controls for KnobDeck across Chrome, Edge, Brave, Firefox, and Zen, on Windows and
 macOS. On macOS it finds browsers in `/Applications` / `~/Applications`, reads bookmarks and
 history from `~/Library/Application Support`, and drives Chrome, Edge and Brave through their AppleScript interface (tabs, navigation, windows,
 incognito), asking once for permission to control the browser. Firefox, Zen and page commands with no

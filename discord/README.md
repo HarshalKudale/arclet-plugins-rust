@@ -1,6 +1,6 @@
-# Discord Plugin for Arclet
+# Discord Plugin for KnobDeck
 
-Discord integration plugin — control mute, deafen, push-to-talk, channels, volume, soundboard, and more directly from your Arclet hub.
+Discord integration plugin — control mute, deafen, push-to-talk, channels, volume, soundboard, and more directly from your KnobDeck hub.
 
 ## Features
 
@@ -37,15 +37,15 @@ Most Discord actions now prefer **server, channel, friend, device, sound, and ca
 ## Setup
 
 1. Open the **Discord desktop app** and sign in.
-2. In Arclet, open **Plugins → Discord** and click **Setup**.
+2. In KnobDeck, open **Plugins → Discord** and click **Setup**.
 3. Discord shows an authorization popup inside the client. Click **Authorize**.
 
-That's it. Arclet stores the sign-in in its plugin data folder (`%APPDATA%\Arclet\plugin-data\discord\` on
-Windows, `~/Library/Application Support/Arclet/plugin-data/discord/` on macOS) and renews it on its own,
+That's it. KnobDeck stores the sign-in in its plugin data folder (`%APPDATA%\KnobDeck\plugin-data\discord\` on
+Windows, `~/Library/Application Support/KnobDeck/plugin-data/discord/` on macOS) and renews it on its own,
 so you only run setup again if you revoke access in Discord (**User Settings → Authorized Apps**).
 
 There is no Discord developer app or client secret to create: the token exchange happens on
-`arclet.harshalkudale.com`, so the secret never ships with the plugin.
+`knobdeck.harshalkudale.com`, so the secret never ships with the plugin.
 
 ---
 

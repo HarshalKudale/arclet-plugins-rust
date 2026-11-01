@@ -18,7 +18,7 @@ use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, Global
 use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, VIRTUAL_KEY, VK_CONTROL, VK_RETURN, VK_V};
 use windows::Win32::UI::Shell::{DragQueryFileW, HDROP};
 
-type R<T> = arclet_sdk::Result<T>;
+type R<T> = knobdeck_sdk::Result<T>;
 
 const CF_UNICODETEXT: u32 = 13;
 const CF_DIB: u32 = 8;
@@ -28,8 +28,8 @@ const PREVIEW_TEXT_MAX: usize = 120;
 /// as base64 BMPs can exceed the host's frame limit and silently drop the connection.
 const THUMBNAIL_MAX_DIM: usize = 160;
 
-fn werr(what: &str, e: windows::core::Error) -> arclet_sdk::Error {
-    arclet_sdk::Error::msg(format!("{what} failed: {e}"))
+fn werr(what: &str, e: windows::core::Error) -> knobdeck_sdk::Error {
+    knobdeck_sdk::Error::msg(format!("{what} failed: {e}"))
 }
 
 pub struct HistoryItem {
@@ -269,13 +269,13 @@ pub fn apply_history_item(id: &str) -> R<()> {
     let item = items
         .iter()
         .find(|i| i.Id().map_or(false, |h| h.to_string() == id))
-        .ok_or_else(|| arclet_sdk::Error::msg("That clipboard item is no longer available"))?;
+        .ok_or_else(|| knobdeck_sdk::Error::msg("That clipboard item is no longer available"))?;
     set_live(item)
 }
 
-/// Arclet's `INJECTED_INPUT_TAG` (arclet-core `action.rs`): the dial's keyboard hook passes
+/// KnobDeck's `INJECTED_INPUT_TAG` (knobdeck-core `action.rs`): the dial's keyboard hook passes
 /// keys carrying it through to the app instead of swallowing them while the dial is open.
-const INJECTED_INPUT_TAG: usize = 0x4152_434C; // "ARCL"
+const INJECTED_INPUT_TAG: usize = 0x4B4E_4F42; // "KNOB"
 
 fn key_input(vk: VIRTUAL_KEY, scan: u16, flags: KEYBD_EVENT_FLAGS, up: bool) -> INPUT {
     let flags = if up { flags | KEYEVENTF_KEYUP } else { flags };
@@ -318,7 +318,7 @@ pub fn set_text(text: &str) -> R<()> {
             let p = GlobalLock(g) as *mut u16;
             if p.is_null() {
                 let _ = GlobalFree(g);
-                return Err(arclet_sdk::Error::msg("GlobalLock failed"));
+                return Err(knobdeck_sdk::Error::msg("GlobalLock failed"));
             }
             std::ptr::copy_nonoverlapping(wide.as_ptr(), p, wide.len());
             let _ = GlobalUnlock(g);

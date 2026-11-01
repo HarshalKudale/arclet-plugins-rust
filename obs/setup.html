@@ -120,8 +120,8 @@
   <div class="wrap">
     <div class="card stack">
       <div class="stack" style="gap: 8px;">
-        <h1>Connect Arclet to OBS</h1>
-        <p>Enter the OBS WebSocket details Arclet should save for this plugin.</p>
+        <h1>Connect KnobDeck to OBS</h1>
+        <p>Enter the OBS WebSocket details KnobDeck should save for this plugin.</p>
       </div>
 
       <div class="steps">
@@ -144,7 +144,7 @@
         <div class="field">
           <label for="password">WebSocket Password</label>
           <input id="password" name="password" type="password" placeholder="Leave blank if not set" autocomplete="off">
-          <div class="hint">Arclet stores these values in the plugin's local <code>.env</code> file.</div>
+          <div class="hint">KnobDeck stores these values in the plugin's local <code>.env</code> file.</div>
         </div>
 
         <div id="status" class="status idle">Ready to save your OBS connection.</div>
@@ -158,7 +158,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = 'arclet.obs.setup.form';
+    const STORAGE_KEY = 'knobdeck.obs.setup.form';
     const form = document.getElementById('setup-form');
     const statusEl = document.getElementById('status');
     const submitBtn = document.getElementById('submit-btn');
@@ -222,16 +222,16 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
       setBusy(true);
       setStatus('running', 'Saving OBS connection…');
-      window.parent.postMessage({ source: 'arclet-setup-page', type: 'setup-submit', values }, '*');
+      window.parent.postMessage({ source: 'knobdeck-setup-page', type: 'setup-submit', values }, '*');
     });
 
     cancelBtn.addEventListener('click', () => {
-      window.parent.postMessage({ source: 'arclet-setup-page', type: 'setup-cancel' }, '*');
+      window.parent.postMessage({ source: 'knobdeck-setup-page', type: 'setup-cancel' }, '*');
     });
 
     window.addEventListener('message', (event) => {
       const data = event && event.data;
-      if (!data || data.source !== 'arclet-host') return;
+      if (!data || data.source !== 'knobdeck-host') return;
       if (data.type === 'setup-complete') {
         setStatus('success', 'OBS connection saved.');
         setBusy(false);

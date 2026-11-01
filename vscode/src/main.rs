@@ -1,8 +1,8 @@
-//! VS Code plugin for Arclet — drives VS Code through the Arclet VS Code
+//! VS Code plugin for KnobDeck — drives VS Code through the KnobDeck VS Code
 //! companion extension's local action server.
 
-use arclet_sdk::input::{self, InputExt};
-use arclet_sdk::{env_or, json, load_env, Action, Error, Plugin, Result, Value};
+use knobdeck_sdk::input::{self, InputExt};
+use knobdeck_sdk::{env_or, json, load_env, Action, Error, Plugin, Result, Value};
 use std::time::Duration;
 
 const NAME: &str = "VS Code companion";
@@ -49,7 +49,7 @@ fn get(path: &str, inputs: &Value, params: &[(&str, &str)]) -> Result<ureq::Resp
     match req.call() {
         Ok(r) => Ok(r),
         Err(ureq::Error::Status(401 | 403, _)) => {
-            arclet_sdk::mark_setup_required(format!("{NAME} rejected the password"));
+            knobdeck_sdk::mark_setup_required(format!("{NAME} rejected the password"));
             Err(Error::msg(format!("{NAME} rejected the configured password.")))
         }
         Err(ureq::Error::Status(code, r)) => {
@@ -73,7 +73,7 @@ fn fetch_options(name: &str, inputs: &Value) -> Result<Vec<Value>> {
         .unwrap_or_default())
 }
 
-fn require(ctx: &arclet_sdk::Ctx, key: &str, what: &str) -> Result<String> {
+fn require(ctx: &knobdeck_sdk::Ctx, key: &str, what: &str) -> Result<String> {
     match ctx.input_str(key).trim() {
         "" => ctx.fail(format!("{what} is required")),
         v => Ok(v.to_string()),
@@ -132,8 +132,8 @@ fn main() {
     load_env();
     let mut plugin = Plugin::new("vscode", "VS Code")
         .version("1.0.0")
-        .author("Arclet")
-        .description("Control Visual Studio Code through the Arclet VS Code companion extension.")
+        .author("KnobDeck")
+        .description("Control Visual Studio Code through the KnobDeck VS Code companion extension.")
         .icon("vscode-logo.svg")
         .ack_timeout_ms(5000)
         .setup("vscode-setup", Some("setup.html"));

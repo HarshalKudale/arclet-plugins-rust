@@ -2,7 +2,7 @@
 //! (read with a short timeout, drain an outgoing queue between reads), callers
 //! block on a per-request channel. Reconnects with the same back-off as the JS plugin.
 
-use arclet_sdk::{json, log, Error, Result, Value};
+use knobdeck_sdk::{json, log, Error, Result, Value};
 use base64::Engine;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -118,7 +118,7 @@ pub fn run(host: String, port: String, password: String, on_connected: fn(), on_
             Err(e) if e.contains("password") => {
                 // Retrying can't fix a bad password; the host stops us and asks for setup.
                 log(format!("OBS: {e}"));
-                arclet_sdk::mark_setup_required(e);
+                knobdeck_sdk::mark_setup_required(e);
                 return;
             }
             Err(e) => log(format!("OBS: connect error: {e}")),

@@ -75,7 +75,7 @@
 <body>
   <div class="card">
     <h1>Discord Setup</h1>
-    <p>Authorize Arclet with your Discord desktop client.</p>
+    <p>Authorize KnobDeck with your Discord desktop client.</p>
     <button id="auth-btn" type="button">Authorize Discord</button>
     <div id="status" class="status"></div>
   </div>
@@ -92,12 +92,12 @@
     button.addEventListener('click', () => {
       button.disabled = true;
       setStatus('Waiting for Discord authorization...');
-      window.parent.postMessage({ source: 'arclet-setup-page', type: 'setup-submit', values: {} }, '*');
+      window.parent.postMessage({ source: 'knobdeck-setup-page', type: 'setup-submit', values: {} }, '*');
     });
 
     window.addEventListener('message', (event) => {
       const data = event && event.data;
-      if (!data || data.source !== 'arclet-host') return;
+      if (!data || data.source !== 'knobdeck-host') return;
       if (data.type === 'setup-complete') {
         setStatus('Discord authorized.', 'success');
         button.disabled = false;

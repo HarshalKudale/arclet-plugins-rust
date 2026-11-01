@@ -27,7 +27,7 @@ pub fn snapshot() -> Procs {
 
 /// Whether `pid` is still the process that wrote the session file. `procStart`
 /// is the creation time in FILETIME ticks; a pid alone can be reused.
-pub fn alive(pid: u32, proc_start: &arclet_sdk::Value) -> bool {
+pub fn alive(pid: u32, proc_start: &knobdeck_sdk::Value) -> bool {
     let proc_start: Option<u64> = proc_start.as_str().and_then(|s| s.parse().ok());
     started_at(pid).map_or(false, |t| proc_start.map_or(true, |p| p == t))
 }

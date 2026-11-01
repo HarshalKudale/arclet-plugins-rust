@@ -33,8 +33,8 @@ fn main() {
 mod app {
     use crate::sessions::{self, folder_name, Session, Status};
     use crate::{os, usage};
-    use arclet_sdk::input::{self, InputExt};
-    use arclet_sdk::{json, log, Action, Ctx, Plugin, Result, Value, Visual};
+    use knobdeck_sdk::input::{self, InputExt};
+    use knobdeck_sdk::{json, log, Action, Ctx, Plugin, Result, Value, Visual};
     use base64::Engine;
     use std::collections::HashMap;
     use std::sync::Mutex;
@@ -179,7 +179,7 @@ mod app {
     pub fn run() {
         Plugin::new("claude", "Claude")
             .version("1.0.0")
-            .author("Arclet")
+            .author("KnobDeck")
             .description("See and switch between running Claude Code sessions, turn on Remote Control, view usage and reopen recent sessions. Read-only: no prompts, no AI calls.")
             .icon("bot")
             .platforms(&["windows", "macos"])

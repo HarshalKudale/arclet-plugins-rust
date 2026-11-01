@@ -1,6 +1,6 @@
 # Mac Tools
 
-Window management and system tools for Arclet on **macOS** — the macOS counterpart of Win Tools.
+Window management and system tools for KnobDeck on **macOS** — the macOS counterpart of Win Tools.
 
 ## What it does
 
@@ -21,8 +21,8 @@ Window management and system tools for Arclet on **macOS** — the macOS counter
 
 ## Permissions
 
-- **Accessibility** (already granted to Arclet) — moving, resizing and reading windows.
-- Shortcut actions are sent by Arclet itself, like its built-in key actions.
+- **Accessibility** (already granted to KnobDeck) — moving, resizing and reading windows.
+- Shortcut actions are sent by KnobDeck itself, like its built-in key actions.
 
 ## Differences from Win Tools
 

@@ -6,12 +6,12 @@
 //! - Host: the nearest ancestor that is an app bundle's main executable
 //!   (Terminal, iTerm2, VS Code, the Claude app…). In Terminal and iTerm2 the
 //!   session's tty pins down the exact tab, so tabs are never "shared".
-//! - Front: the Accessibility API's focused application (Arclet already holds
+//! - Front: the Accessibility API's focused application (KnobDeck already holds
 //!   Accessibility, and its plugins inherit it), plus the terminal's front tab.
 //! - Terminal tabs are found and selected through AppleScript (Automation
 //!   permission for Terminal / iTerm2, asked on first use).
 
-use arclet_sdk::{log, Value};
+use knobdeck_sdk::{log, Value};
 use std::collections::HashMap;
 use std::ffi::{c_void, CStr};
 use std::process::Command;
@@ -321,7 +321,7 @@ pub fn focus(w: &Window) {
     if selected.as_deref() == Some("ok") {
         return;
     }
-    if let Err(e) = arclet_sdk::focus_app(&w.bundle) {
+    if let Err(e) = knobdeck_sdk::focus_app(&w.bundle) {
         log(format!("focus {}: {e}", w.bundle));
     }
 }
@@ -349,7 +349,7 @@ pub fn run_in_terminal(cwd: &str, args: &[&str]) -> std::io::Result<()> {
 end run"#;
     let mut argv = vec![cwd];
     argv.extend_from_slice(args);
-    osascript(SCRIPT, &argv).map(|_| ()).ok_or_else(|| std::io::Error::other("Couldn't open Terminal (allow Arclet to control Terminal in System Settings → Privacy & Security → Automation)"))
+    osascript(SCRIPT, &argv).map(|_| ()).ok_or_else(|| std::io::Error::other("Couldn't open Terminal (allow KnobDeck to control Terminal in System Settings → Privacy & Security → Automation)"))
 }
 
 // ── Directory watch ──────────────────────────────────────────────────────────

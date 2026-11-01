@@ -1,4 +1,4 @@
-//! Shared Chrome / Edge / Brave / Firefox / Zen browser controls for Arclet:
+//! Shared Chrome / Edge / Brave / Firefox / Zen browser controls for KnobDeck:
 //! shortcuts (sent to the focused browser via the host), URL opening, hold-to-repeat
 //! tab cycling and zoom, a page-zoom slider, and bookmark / history wheels.
 
@@ -6,8 +6,8 @@ mod browsers;
 mod data;
 mod native;
 
-use arclet_sdk::input::{self, InputExt};
-use arclet_sdk::{focus_app, json, send_keys, Action, Ctx, Error, Plugin, Result, Value};
+use knobdeck_sdk::input::{self, InputExt};
+use knobdeck_sdk::{focus_app, json, send_keys, Action, Ctx, Error, Plugin, Result, Value};
 use browsers::{detect_key, ensure_executable, meta, selection, Family, KEYS};
 use std::collections::HashMap;
 use std::process::Command;
@@ -252,7 +252,7 @@ const PREV_TAB: &str = per_os("ctrl pgup", "ctrl shift tab");
 fn main() {
     let mut plugin = Plugin::new("browser-plugin", "BrowserPlugin")
         .version("1.0.0")
-        .author("Arclet")
+        .author("KnobDeck")
         .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows and macOS.")
         .icon("globe")
         .ack_timeout_ms(5000);

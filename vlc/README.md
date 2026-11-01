@@ -1,6 +1,6 @@
-# VLC Plugin for Arclet
+# VLC Plugin for KnobDeck
 
-VLC integration plugin for Arclet — control playback over VLC's built-in **HTTP interface**, so VLC does **not** need to be focused.
+VLC integration plugin for KnobDeck — control playback over VLC's built-in **HTTP interface**, so VLC does **not** need to be focused.
 
 ## Supported actions
 
@@ -23,7 +23,7 @@ VLC integration plugin for Arclet — control playback over VLC's built-in **HTT
 6. Open **Main interfaces → Lua**
 7. Set a **Lua HTTP password**
 8. Save and restart VLC
-9. Run the Arclet plugin setup and enter:
+9. Run the KnobDeck plugin setup and enter:
    - Host: usually `127.0.0.1`
    - Port: usually `8080`
    - Password: the Lua HTTP password you set

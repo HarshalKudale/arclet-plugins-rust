@@ -75,9 +75,9 @@
 <body>
   <form class="card" id="setup-form">
     <h1>IntelliJ Setup</h1>
-    <p>Connect Arclet to the IntelliJ companion plugin.</p>
+    <p>Connect KnobDeck to the IntelliJ companion plugin.</p>
     <div class="note">
-      Install the <b>Arclet IntelliJ Companion</b> plugin in your IDE, then enable its action service in <b>Settings → Tools → Arclet</b>. Use the same password and port here.
+      Install the <b>KnobDeck IntelliJ Companion</b> plugin in your IDE, then enable its action service in <b>Settings → Tools → KnobDeck</b>. Use the same password and port here.
     </div>
     <div class="grid">
       <div class="row">
@@ -116,7 +116,7 @@
       button.disabled = true;
       setStatus('Verifying IntelliJ companion connection...');
       window.parent.postMessage({
-        source: 'arclet-setup-page',
+        source: 'knobdeck-setup-page',
         type: 'setup-submit',
         values: {
           host: host.value.trim(),
@@ -128,7 +128,7 @@
 
     window.addEventListener('message', (event) => {
       const data = event && event.data;
-      if (!data || data.source !== 'arclet-host') return;
+      if (!data || data.source !== 'knobdeck-host') return;
       if (data.type === 'setup-complete') {
         setStatus('IntelliJ setup saved.');
         button.disabled = false;

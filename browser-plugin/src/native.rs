@@ -3,7 +3,7 @@
 //! macOS: Chrome, Edge and Brave (and other Chromium builds) publish an
 //! AppleScript dictionary with tabs, navigation and windows, so those actions
 //! go through it: no focus or keyboard layout involved, and a page can't
-//! swallow the chord. It needs a one-time Automation permission ("Arclet wants
+//! swallow the chord. It needs a one-time Automation permission ("KnobDeck wants
 //! to control Google Chrome"); if it is refused or the call fails, the caller
 //! falls back to the shortcut. Firefox and Zen publish no scripting interface.
 //!
@@ -24,7 +24,7 @@ pub use mac::try_run;
 #[cfg(target_os = "macos")]
 mod mac {
     use crate::browsers::{detect_key, exe_path, meta, Family};
-    use arclet_sdk::{log, Value};
+    use knobdeck_sdk::{log, Value};
     use core_foundation::bundle::CFBundle;
     use core_foundation::string::CFString;
     use core_foundation::url::CFURL;

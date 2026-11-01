@@ -1,12 +1,12 @@
 //! Accessibility (AXUIElement) wrappers: the only public way to move, resize,
 //! minimise, close and raise *other* apps' windows on macOS.
 //!
-//! Needs the Accessibility permission. Arclet already holds it, and a plugin
-//! process inherits it from Arclet (the responsible process). Coordinates are
+//! Needs the Accessibility permission. KnobDeck already holds it, and a plugin
+//! process inherits it from KnobDeck (the responsible process). Coordinates are
 //! global points with a top-left origin on the primary display, the same space
 //! `CGDisplayBounds` uses.
 
-use arclet_sdk::{Error, Result};
+use knobdeck_sdk::{Error, Result};
 use core_foundation::base::{CFEqual, CFGetTypeID, CFRelease, CFRetain, CFTypeRef, TCFType};
 use core_foundation::boolean::CFBoolean;
 use core_foundation::string::{CFString, CFStringRef};
@@ -58,7 +58,7 @@ pub fn ensure_trusted() -> Result {
     if unsafe { AXIsProcessTrusted() } {
         Ok(())
     } else {
-        Err(Error::msg("Mac Tools needs the Accessibility permission: System Settings → Privacy & Security → Accessibility → turn on Arclet"))
+        Err(Error::msg("Mac Tools needs the Accessibility permission: System Settings → Privacy & Security → Accessibility → turn on KnobDeck"))
     }
 }
 
@@ -314,14 +314,14 @@ impl Elem {
 
 /// The focused app (system-wide AX), as an app element.
 /// The app the user is working in. Accessibility's focused application first;
-/// while Arclet's own dial / deck is involved that lookup fails or returns
-/// Arclet, so fall back to the owner of the frontmost normal window that isn't
-/// Arclet's (window-server order, front to back).
+/// while KnobDeck's own dial / deck is involved that lookup fails or returns
+/// KnobDeck, so fall back to the owner of the frontmost normal window that isn't
+/// KnobDeck's (window-server order, front to back).
 pub fn focused_app() -> Result<Elem> {
     ensure_trusted()?;
     let sys = Elem::from_owned(unsafe { AXUIElementCreateSystemWide() }).ok_or_else(|| Error::msg("Accessibility is unavailable"))?;
     if let Some(app) = sys.elem_attr("AXFocusedApplication") {
-        if app.pid().is_some_and(|pid| !crate::windows::is_arclet_pid(pid)) {
+        if app.pid().is_some_and(|pid| !crate::windows::is_knobdeck_pid(pid)) {
             return Ok(app);
         }
     }

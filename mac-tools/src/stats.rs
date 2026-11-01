@@ -5,7 +5,7 @@
 //! - GPU: IOKit `IOAccelerator` → `PerformanceStatistics["Device Utilization %"]`
 //!   (Apple silicon, AMD and Intel drivers all publish it); the busiest GPU wins.
 
-use arclet_sdk::Result;
+use knobdeck_sdk::Result;
 use base64::Engine;
 use core_foundation::base::{CFType, TCFType};
 use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};

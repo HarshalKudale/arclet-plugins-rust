@@ -1,5 +1,5 @@
 //! Discord first-time setup: authorize through the Discord desktop client (native
-//! popup, no browser), exchange the code for tokens through the Arclet website
+//! popup, no browser), exchange the code for tokens through the KnobDeck website
 //! (which holds the client secret), and save them to
 //! `discord-rpc-token.json` in the plugin data folder.
 
@@ -8,13 +8,13 @@ mod common;
 #[path = "../rpc.rs"]
 mod rpc;
 
-use arclet_sdk::{json, Error};
+use knobdeck_sdk::{json, Error};
 
 fn main() {
-    arclet_sdk::run_setup(|ctx| {
+    knobdeck_sdk::run_setup(|ctx| {
         let client_id = common::client_id();
         if common::token_url().is_none() {
-            return ctx.fail("ARCLET_DISCORD_TOKEN_URL is not configured for this build of the Discord plugin.");
+            return ctx.fail("KNOBDECK_DISCORD_TOKEN_URL is not configured for this build of the Discord plugin.");
         }
 
         ctx.log("[setup] Connecting to Discord RPC...");

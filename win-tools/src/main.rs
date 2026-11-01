@@ -1,4 +1,4 @@
-//! win-tools — advanced window management for Arclet.
+//! win-tools — advanced window management for KnobDeck.
 //!
 //! Current Window (minimize/maximize/z-order/toggles), Audio (per-app volume/mute matched by
 //! exe name), Position (snap to halves/quarters/fullscreen/custom on any monitor), window-picker
@@ -29,8 +29,8 @@ fn main() {
 #[cfg(windows)]
 mod app {
     use crate::{audio, clipboard, stats, win32, win32::Region, winicon};
-    use arclet_sdk::input::{self, InputExt};
-    use arclet_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Value, Visual};
+    use knobdeck_sdk::input::{self, InputExt};
+    use knobdeck_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -242,7 +242,7 @@ mod app {
     pub fn run() -> ! {
         let mut p = Plugin::new("win-tools", "Win Tools")
             .version("1.1.0")
-            .author("Arclet")
+            .author("KnobDeck")
             .description("Advanced window management: snap, resize, transparency, always-on-top, per-app volume, and more.")
             .icon("app-window")
             .platforms(&["windows"])
@@ -582,7 +582,7 @@ mod app {
     /// A button that presses a Windows shell shortcut through the host. Last
     /// resort only: use it when no API or shell target does the job (see CLAUDE.md).
     fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
-        Action::button(id, label).icon(icon).on_press(move |_| arclet_sdk::send_keys(keys))
+        Action::button(id, label).icon(icon).on_press(move |_| knobdeck_sdk::send_keys(keys))
     }
 
     fn snippet_inputs() -> Vec<Value> {

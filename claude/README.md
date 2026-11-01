@@ -43,17 +43,17 @@ must not do. Everything the pipe could report also lands in `sessions/<pid>.json
   unless it is already in front, because you are then on the tab you mean.
 - **macOS:** sessions in **Terminal** and **iTerm2** are matched to their exact tab by tty, so
   switching selects the right tab and Remote Control always types into the right session. The
-  first switch asks to let Arclet control Terminal / iTerm2 (System Settings → Privacy & Security
+  first switch asks to let KnobDeck control Terminal / iTerm2 (System Settings → Privacy & Security
   → Automation). Other hosts (VS Code, the Claude app) are focused per app; several sessions in
   one of them count as a shared window, as on Windows. Resuming opens a new Terminal.app window.
-  Telling which session is in front uses the Accessibility permission Arclet already has.
+  Telling which session is in front uses the Accessibility permission KnobDeck already has.
 - `/rc` typed while a session is busy is queued by Claude Code and runs after the turn.
 
 ## Build
 
 ```bash
-arclet-plugin dev       # dist/claude/ → "Load Unpacked" in Arclet
-arclet-plugin build && arclet-plugin package
+knobdeck-plugin dev       # dist/claude/ → "Load Unpacked" in KnobDeck
+knobdeck-plugin build && knobdeck-plugin package
 cargo test -p claude                          # unit tests
 cargo test -p claude -- --ignored --nocapture # smoke test against this machine's ~/.claude
 ```

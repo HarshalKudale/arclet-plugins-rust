@@ -75,9 +75,9 @@
 <body>
   <form class="card" id="setup-form">
     <h1>VS Code Setup</h1>
-    <p>Connect Arclet to the VS Code companion extension.</p>
+    <p>Connect KnobDeck to the VS Code companion extension.</p>
     <div class="note">
-      Install the <b>Arclet VS Code Companion</b> extension, enable its local action server, then use the same password and port here.
+      Install the <b>KnobDeck VS Code Companion</b> extension, enable its local action server, then use the same password and port here.
     </div>
     <div class="grid">
       <div class="row">
@@ -116,7 +116,7 @@
       button.disabled = true;
       setStatus('Verifying VS Code companion connection...');
       window.parent.postMessage({
-        source: 'arclet-setup-page',
+        source: 'knobdeck-setup-page',
         type: 'setup-submit',
         values: {
           host: host.value.trim(),
@@ -128,7 +128,7 @@
 
     window.addEventListener('message', (event) => {
       const data = event && event.data;
-      if (!data || data.source !== 'arclet-host') return;
+      if (!data || data.source !== 'knobdeck-host') return;
       if (data.type === 'setup-complete') {
         setStatus('VS Code setup saved.');
         button.disabled = false;

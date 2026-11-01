@@ -17,7 +17,7 @@
 //! crash at launch.
 
 use crate::ax::{self, Elem};
-use arclet_sdk::{log, Error, Result};
+use knobdeck_sdk::{log, Error, Result};
 use core_foundation::array::{CFArray, CFArrayRef};
 use core_foundation::base::{CFType, TCFType};
 use core_foundation::dictionary::{CFDictionary, CFDictionaryRef};
@@ -99,11 +99,11 @@ pub fn character_viewer() -> Result {
 
 // ── Hide Others ──────────────────────────────────────────────────────────────
 
-/// Hide every app with windows except the one in front (and Arclet).
+/// Hide every app with windows except the one in front (and KnobDeck).
 pub fn hide_others() -> Result {
     let front = ax::focused_app()?.pid();
     for pid in crate::windows::window_app_pids() {
-        if Some(pid) != front && !crate::windows::is_arclet_pid(pid) {
+        if Some(pid) != front && !crate::windows::is_knobdeck_pid(pid) {
             let _ = Elem::app(pid).set_bool("AXHidden", true);
         }
     }
@@ -120,7 +120,7 @@ pub fn paste() -> Result {
         Some(item) => item.perform("AXPress"),
         None => {
             log("paste: no Paste menu item in the front app; sending ⌘V");
-            arclet_sdk::send_keys("cmd v")
+            knobdeck_sdk::send_keys("cmd v")
         }
     }
 }
@@ -228,9 +228,9 @@ pub fn type_text(text: &str) -> Result {
     Ok(())
 }
 
-/// Arclet's tag for its own injected input (`arclet_core::action::INJECTED_INPUT_TAG`),
-/// so Arclet's key listener ignores these events.
-const INJECTED_INPUT_TAG: i64 = 0x4152_434C;
+/// KnobDeck's tag for its own injected input (`knobdeck_core::action::INJECTED_INPUT_TAG`),
+/// so KnobDeck's key listener ignores these events.
+const INJECTED_INPUT_TAG: i64 = 0x4B4E_4F42;
 const FIELD_SOURCE_USER_DATA: u32 = 42;
 
 /// Trigger a system shortcut the way the user configured it (or the macOS default).

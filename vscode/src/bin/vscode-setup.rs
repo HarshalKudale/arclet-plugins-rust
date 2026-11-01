@@ -3,10 +3,10 @@
 use std::time::Duration;
 
 fn main() {
-    arclet_sdk::run_setup(|ctx| {
+    knobdeck_sdk::run_setup(|ctx| {
         // JS `inputs.x ?? default`: only a missing/null field takes the default.
         let get = |key: &str, default: &str| match ctx.inputs.get(key) {
-            None | Some(arclet_sdk::Value::Null) => default.to_string(),
+            None | Some(knobdeck_sdk::Value::Null) => default.to_string(),
             Some(_) => ctx.input_str(key).trim().to_string(),
         };
         let (host, port, password) = (get("host", "127.0.0.1"), get("port", "32145"), get("password", ""));
@@ -30,7 +30,7 @@ fn main() {
             Err(ureq::Error::Status(code, _)) => return ctx.fail(format!("The VS Code companion returned HTTP {code}.")),
             Err(e) => {
                 return ctx.fail(format!(
-                    "Could not reach the VS Code companion at {base}. Install the Arclet VS Code companion extension and enable its action server. ({e})"
+                    "Could not reach the VS Code companion at {base}. Install the KnobDeck VS Code companion extension and enable its action server. ({e})"
                 ))
             }
         }

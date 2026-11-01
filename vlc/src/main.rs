@@ -1,7 +1,7 @@
-//! VLC plugin for Arclet — controls VLC through its built-in HTTP interface.
+//! VLC plugin for KnobDeck — controls VLC through its built-in HTTP interface.
 
-use arclet_sdk::input::{self, InputExt};
-use arclet_sdk::{env_or, load_env, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
+use knobdeck_sdk::input::{self, InputExt};
+use knobdeck_sdk::{env_or, load_env, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
 use base64::Engine;
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
@@ -40,7 +40,7 @@ fn vlc_request(command: Option<&str>, params: &[(&str, &str)]) -> Result<Value> 
     match req.call() {
         Ok(r) => r.into_json().map_err(|e| Error::msg(format!("VLC returned invalid JSON: {e}"))),
         Err(ureq::Error::Status(401, _)) => {
-            arclet_sdk::mark_setup_required("VLC rejected the HTTP password");
+            knobdeck_sdk::mark_setup_required("VLC rejected the HTTP password");
             Err(Error::msg("VLC rejected the configured HTTP password."))
         }
         Err(ureq::Error::Status(code, _)) => Err(Error::msg(format!("VLC returned HTTP {code}."))),
@@ -120,7 +120,7 @@ fn main() {
     load_env();
     Plugin::new("vlc", "VLC")
         .version("1.0.0")
-        .author("Arclet")
+        .author("KnobDeck")
         .description("Control VLC over its built-in HTTP interface.")
         .ack_timeout_ms(5000)
         .setup("vlc-setup", Some("setup.html"))

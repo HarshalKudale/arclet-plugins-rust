@@ -4,10 +4,10 @@ use base64::Engine;
 use std::time::Duration;
 
 fn main() {
-    arclet_sdk::run_setup(|ctx| {
+    knobdeck_sdk::run_setup(|ctx| {
         // JS `inputs.x ?? default`: only a missing/null field takes the default.
         let get = |key: &str, default: &str| match ctx.inputs.get(key) {
-            None | Some(arclet_sdk::Value::Null) => default.to_string(),
+            None | Some(knobdeck_sdk::Value::Null) => default.to_string(),
             Some(_) => ctx.input_str(key).trim().to_string(),
         };
         let (host, port, password) = (get("host", "127.0.0.1"), get("port", "8080"), get("password", ""));
@@ -27,7 +27,7 @@ fn main() {
         }
         match req.call() {
             Ok(r) => {
-                if let Err(e) = r.into_json::<arclet_sdk::Value>() {
+                if let Err(e) = r.into_json::<knobdeck_sdk::Value>() {
                     return ctx.fail(format!("VLC responded with invalid JSON: {e}"));
                 }
             }

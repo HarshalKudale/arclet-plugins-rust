@@ -27,14 +27,14 @@ pub fn client_id() -> String {
         .unwrap_or_else(|| APP_ID.into())
 }
 
-/// The Arclet website endpoint that swaps an authorization code or refresh
+/// The KnobDeck website endpoint that swaps an authorization code or refresh
 /// token for an access token (it holds the client secret, like Elgato's
 /// discord-plugin-auth server). Runtime env var, else the build-time value.
 pub fn token_url() -> Option<String> {
-    std::env::var("ARCLET_DISCORD_TOKEN_URL")
+    std::env::var("KNOBDECK_DISCORD_TOKEN_URL")
         .ok()
         .filter(|v| !v.is_empty())
-        .or_else(|| option_env!("ARCLET_DISCORD_TOKEN_URL").map(String::from))
+        .or_else(|| option_env!("KNOBDECK_DISCORD_TOKEN_URL").map(String::from))
         .filter(|v| !v.is_empty())
 }
 
@@ -44,12 +44,12 @@ fn now_secs() -> u64 {
 
 /// POST `body` (`{"code"}` or `{"refresh_token"}`) to the token worker and
 /// store the returned tokens. Returns the new access token.
-pub fn exchange(body: arclet_sdk::Value) -> Result<String, String> {
-    let url = token_url().ok_or("ARCLET_DISCORD_TOKEN_URL is not configured for this build of the Discord plugin.")?;
-    let reply: arclet_sdk::Value = match ureq::post(&url).timeout(std::time::Duration::from_secs(15)).send_json(body) {
+pub fn exchange(body: knobdeck_sdk::Value) -> Result<String, String> {
+    let url = token_url().ok_or("KNOBDECK_DISCORD_TOKEN_URL is not configured for this build of the Discord plugin.")?;
+    let reply: knobdeck_sdk::Value = match ureq::post(&url).timeout(std::time::Duration::from_secs(15)).send_json(body) {
         Ok(r) => r.into_json().map_err(|e| format!("Discord token exchange returned invalid JSON: {e}"))?,
         Err(ureq::Error::Status(_, r)) => {
-            let v: arclet_sdk::Value = r.into_json().unwrap_or_default();
+            let v: knobdeck_sdk::Value = r.into_json().unwrap_or_default();
             return Err(format!("Discord token exchange failed: {}", v["error"].as_str().unwrap_or("unknown error")));
         }
         Err(e) => return Err(format!("Discord token exchange failed: {e}")),
@@ -64,7 +64,7 @@ pub fn exchange(body: arclet_sdk::Value) -> Result<String, String> {
     Ok(access.to_string())
 }
 
-fn stored() -> Option<arclet_sdk::Value> {
+fn stored() -> Option<knobdeck_sdk::Value> {
     std::fs::read_to_string(token_path()).ok()?.parse().ok()
 }
 
@@ -73,12 +73,12 @@ fn stored() -> Option<arclet_sdk::Value> {
 pub fn refresh_token() -> Option<String> {
     let refresh = stored()?["refresh_token"].as_str()?.to_string();
     exchange(serde_json::json!({"refresh_token": refresh}))
-        .map_err(|e| arclet_sdk::log(format!("token refresh failed: {e}")))
+        .map_err(|e| knobdeck_sdk::log(format!("token refresh failed: {e}")))
         .ok()
 }
 
 pub fn token_path() -> std::path::PathBuf {
-    arclet_sdk::data_file(TOKEN_FILE)
+    knobdeck_sdk::data_file(TOKEN_FILE)
 }
 
 /// The stored access token, renewed first when it is within a day of expiry.

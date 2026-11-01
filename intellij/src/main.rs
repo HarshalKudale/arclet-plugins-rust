@@ -1,8 +1,8 @@
-//! IntelliJ plugin for Arclet — runs IDE actions through the Arclet IntelliJ
+//! IntelliJ plugin for KnobDeck — runs IDE actions through the KnobDeck IntelliJ
 //! companion plugin's local action service.
 
-use arclet_sdk::input::{self, InputExt};
-use arclet_sdk::{env_or, load_env, Action, Error, Plugin, Result, Value};
+use knobdeck_sdk::input::{self, InputExt};
+use knobdeck_sdk::{env_or, load_env, Action, Error, Plugin, Result, Value};
 use std::time::Duration;
 
 fn default_port() -> String {
@@ -44,7 +44,7 @@ fn execute_idea_action(action_id: &str, inputs: &Value) -> Result {
     match req.call() {
         Ok(_) => Ok(()),
         Err(ureq::Error::Status(403, _)) => {
-            arclet_sdk::mark_setup_required("The IntelliJ companion rejected the password");
+            knobdeck_sdk::mark_setup_required("The IntelliJ companion rejected the password");
             Err(Error::msg("IntelliJ companion plugin rejected the configured password."))
         }
         Err(ureq::Error::Status(500, _)) => Err(Error::msg("IntelliJ companion plugin rejected the configured password.")),
@@ -85,8 +85,8 @@ fn main() {
     load_env();
     let mut plugin = Plugin::new("intellij", "IntelliJ IDE")
         .version("1.0.0")
-        .author("Arclet")
-        .description("Control IntelliJ IDEs through the Arclet IntelliJ companion plugin.")
+        .author("KnobDeck")
+        .description("Control IntelliJ IDEs through the KnobDeck IntelliJ companion plugin.")
         .icon("intellij-logo.svg")
         .ack_timeout_ms(5000)
         .setup("intellij-setup", Some("setup.html"));

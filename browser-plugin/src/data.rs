@@ -1,7 +1,7 @@
 //! Bookmarks and history readers (Chromium JSON/SQLite, Firefox places.sqlite).
 
 use crate::browsers::{meta, Family};
-use arclet_sdk::{Error, Result, Value};
+use knobdeck_sdk::{Error, Result, Value};
 use rusqlite::{Connection, OpenFlags};
 use std::path::Path;
 
@@ -14,7 +14,7 @@ pub struct Item {
 /// profile databases locked while running, and the WAL is not needed for recent rows.
 fn query_rows(file: Option<&Path>, sql: &str) -> Result<Vec<Item>> {
     let file = file.filter(|f| f.exists()).ok_or_else(|| Error::msg("Browser data file was not found"))?;
-    let tmp = std::env::temp_dir().join(format!("arclet-browser-{}-{}", std::process::id(), file.file_name().unwrap().to_string_lossy()));
+    let tmp = std::env::temp_dir().join(format!("knobdeck-browser-{}-{}", std::process::id(), file.file_name().unwrap().to_string_lossy()));
     std::fs::copy(file, &tmp)?;
     let result = (|| -> rusqlite::Result<Vec<Item>> {
         let db = Connection::open_with_flags(&tmp, OpenFlags::SQLITE_OPEN_READ_ONLY)?;

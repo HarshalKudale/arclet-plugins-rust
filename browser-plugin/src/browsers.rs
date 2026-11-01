@@ -1,6 +1,6 @@
 //! Browser catalogue: install locations, data files, and per-browser shortcuts.
 
-use arclet_sdk::{Error, Result, Value};
+use knobdeck_sdk::{Error, Result, Value};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -209,7 +209,7 @@ fn resolve_firefox_places(profile_root: &[&str]) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use arclet_sdk::json;
+    use knobdeck_sdk::json;
 
     #[test]
     fn detects_installed_app_entries() {

@@ -1,6 +1,6 @@
 # Win Tools
 
-Advanced Windows window-management and system-volume tools for Arclet. Windows only; on macOS
+Advanced Windows window-management and system-volume tools for KnobDeck. Windows only; on macOS
 use [Mac Tools](../mac-tools).
 
 ## What it does

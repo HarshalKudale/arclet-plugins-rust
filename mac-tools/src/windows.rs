@@ -84,9 +84,9 @@ pub fn app_info(pid: i32) -> AppInfo {
     AppInfo { pid, name, bundle }
 }
 
-/// Arclet's own dial / config windows are never switch targets.
-fn is_arclet(app: &AppInfo) -> bool {
-    app.pid == std::process::id() as i32 || app.name.eq_ignore_ascii_case("arclet") || app.name.to_ascii_lowercase().starts_with("arclet")
+/// KnobDeck's own dial / config windows are never switch targets.
+fn is_knobdeck(app: &AppInfo) -> bool {
+    app.pid == std::process::id() as i32 || app.name.eq_ignore_ascii_case("knobdeck") || app.name.to_ascii_lowercase().starts_with("knobdeck")
 }
 
 /// Every app that owns a normal window (on screen or not).
@@ -94,13 +94,13 @@ pub fn window_app_pids() -> Vec<i32> {
     window_owner_pids(false)
 }
 
-pub fn is_arclet_pid(pid: i32) -> bool {
-    is_arclet(&app_info(pid))
+pub fn is_knobdeck_pid(pid: i32) -> bool {
+    is_knobdeck(&app_info(pid))
 }
 
-/// The app owning the frontmost on-screen normal window (not Arclet's).
+/// The app owning the frontmost on-screen normal window (not KnobDeck's).
 pub fn frontmost_app_pid() -> Option<i32> {
-    window_owner_pids(true).into_iter().find(|&pid| !is_arclet_pid(pid) && !Elem::app(pid).windows().is_empty())
+    window_owner_pids(true).into_iter().find(|&pid| !is_knobdeck_pid(pid) && !Elem::app(pid).windows().is_empty())
 }
 
 /// Every standard window, frontmost app first (minimised windows included).
@@ -114,7 +114,7 @@ pub fn list_open_windows() -> Vec<OpenWindow> {
     let mut out = vec![];
     for pid in pids {
         let app = app_info(pid);
-        if is_arclet(&app) {
+        if is_knobdeck(&app) {
             continue;
         }
         for elem in Elem::app(pid).windows() {

@@ -1,7 +1,7 @@
 //! Live system stats (CPU / GPU / memory %) for the "System Stats" button, plus
 //! a ring-gauge icon to show them on the tile.
 
-use arclet_sdk::{Error, Result};
+use knobdeck_sdk::{Error, Result};
 use base64::Engine;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};

@@ -3,7 +3,7 @@
 //! appended since the last pass), so the 1 GB+ history is parsed once, not every refresh.
 
 use crate::sessions::{claude_dir, now_ms};
-use arclet_sdk::Value;
+use knobdeck_sdk::Value;
 use std::collections::HashMap;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};

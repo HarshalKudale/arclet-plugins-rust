@@ -8,10 +8,10 @@ use windows::core::Interface;
 use windows::Win32::Media::Audio::{eConsole, eRender, IAudioSessionControl2, IAudioSessionManager2, IMMDeviceEnumerator, ISimpleAudioVolume, MMDeviceEnumerator};
 use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
 
-type R<T> = arclet_sdk::Result<T>;
+type R<T> = knobdeck_sdk::Result<T>;
 
-fn werr(what: &str, e: windows::core::Error) -> arclet_sdk::Error {
-    arclet_sdk::Error::msg(format!("{what} failed: {e}"))
+fn werr(what: &str, e: windows::core::Error) -> knobdeck_sdk::Error {
+    knobdeck_sdk::Error::msg(format!("{what} failed: {e}"))
 }
 
 thread_local! {

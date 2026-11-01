@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-arclet-sdk.workspace = true
+knobdeck-sdk.workspace = true
 
 [target.'cfg(windows)'.dependencies]
 base64.workspace = true

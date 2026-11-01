@@ -1,8 +1,8 @@
-//! Zoom plugin for Arclet — controls Zoom via its local REST API
+//! Zoom plugin for KnobDeck — controls Zoom via its local REST API
 //! (Zoom Local App API, `localhost:19421`, available while a meeting is active).
 
-use arclet_sdk::input;
-use arclet_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
+use knobdeck_sdk::input;
+use knobdeck_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
 use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::Duration;
 
@@ -154,7 +154,7 @@ fn reset_meeting() {
 fn main() {
     Plugin::new("zoom", "Zoom")
         .version("1.0.0")
-        .author("Arclet")
+        .author("KnobDeck")
         .description("Control Zoom — mute, video, screen share, raise hand, recording & more.")
         .icon("zoom-logo.svg")
         .ack_timeout_ms(5000)

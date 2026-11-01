@@ -1,4 +1,4 @@
-//! Discord plugin for Arclet — controls the Discord desktop client over its local
+//! Discord plugin for KnobDeck — controls the Discord desktop client over its local
 //! RPC IPC channel (mute, deafen, PTT, channels, volume, soundboard & more).
 //!
 //! App ID:     1527677329524916424
@@ -10,8 +10,8 @@ mod rest;
 mod rpc;
 mod state;
 
-use arclet_sdk::input::{self, InputExt};
-use arclet_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
+use knobdeck_sdk::input::{self, InputExt};
+use knobdeck_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Runtime, Value};
 use common::{clear_token, client_id, load_token, refresh_token};
 use helpers::*;
 use rpc::{Rpc, RpcError};
@@ -146,7 +146,7 @@ fn connect_inner() {
     log(format!("connecting to Discord RPC (token: {})", if token.is_some() { "yes" } else { "no" }));
     let Some(token) = token else {
         log("no stored RPC token — setup required");
-        arclet_sdk::mark_setup_required("Sign in to Discord");
+        knobdeck_sdk::mark_setup_required("Sign in to Discord");
         std::process::exit(1);
     };
 
@@ -165,7 +165,7 @@ fn connect_inner() {
             // Discord returned a numeric error code — token is bad (revoked, invalid, wrong scopes).
             log(format!("RPC auth error (code {code}): {message} — setup required"));
             clear_token();
-            arclet_sdk::mark_setup_required("Discord sign-in expired");
+            knobdeck_sdk::mark_setup_required("Discord sign-in expired");
             std::process::exit(1);
         }
         Err(e) => {
@@ -439,7 +439,7 @@ fn select_text_channel(c: &Rpc, channel_id: &str, guild_id: &str) -> Result {
 fn main() {
     let plugin = Plugin::new("discord", "Discord")
         .version("1.0.0")
-        .author("Arclet")
+        .author("KnobDeck")
         .description("Control Discord — mute, deafen, PTT, channels, volume, soundboard & more.")
         .icon("discord-logo.svg")
         .ack_timeout_ms(5000)
@@ -584,7 +584,7 @@ fn main() {
                         None => match find_best_text_channel(&text_channels(&c, &guild)?) {
                             Some(best) => best["id"].as_str().unwrap_or("").to_string(),
                             None => {
-                                ctx.set_error("That server has no text channels Arclet can open.");
+                                ctx.set_error("That server has no text channels KnobDeck can open.");
                                 return Ok(());
                             }
                         },
@@ -848,7 +848,7 @@ fn main() {
                 .icon("discord.png")
                 .inputs(vec![
                     input::text("details", "Details").placeholder("Pair programming"),
-                    input::text("stateText", "State").placeholder("In Arclet"),
+                    input::text("stateText", "State").placeholder("In KnobDeck"),
                     input::checkbox("clearExisting", "Clear current activity instead").default_value(false),
                 ])
                 .on_press(|ctx| {

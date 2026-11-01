@@ -1,7 +1,7 @@
 //! Shared in-memory Discord voice state, updated by RPC event handlers and read
 //! by action callbacks.
 
-use arclet_sdk::Value;
+use knobdeck_sdk::Value;
 use std::collections::BTreeMap;
 use std::sync::{LazyLock, Mutex, MutexGuard};
 

@@ -158,7 +158,7 @@ fn percent_decode(s: &str) -> String {
 }
 
 /// Put an entry back on the pasteboard, every representation of every item.
-pub fn restore(e: &Entry) -> arclet_sdk::Result {
+pub fn restore(e: &Entry) -> knobdeck_sdk::Result {
     autoreleasepool(|_| {
         let pb = NSPasteboard::generalPasteboard();
         let objs: Vec<Retained<ProtocolObject<dyn NSPasteboardWriting>>> = e
@@ -176,20 +176,20 @@ pub fn restore(e: &Entry) -> arclet_sdk::Result {
         if pb.writeObjects(&NSArray::from_retained_slice(&objs)) {
             Ok(())
         } else {
-            Err(arclet_sdk::Error::msg("Couldn't put that item back on the clipboard"))
+            Err(knobdeck_sdk::Error::msg("Couldn't put that item back on the clipboard"))
         }
     })
 }
 
 /// Replace the pasteboard with plain `text`.
-pub fn set_text(text: &str) -> arclet_sdk::Result {
+pub fn set_text(text: &str) -> knobdeck_sdk::Result {
     autoreleasepool(|_| {
         let pb = NSPasteboard::generalPasteboard();
         pb.clearContents();
         if pb.setString_forType(&NSString::from_str(text), &NSString::from_str("public.utf8-plain-text")) {
             Ok(())
         } else {
-            Err(arclet_sdk::Error::msg("Couldn't put the snippet on the clipboard"))
+            Err(knobdeck_sdk::Error::msg("Couldn't put the snippet on the clipboard"))
         }
     })
 }
