@@ -272,10 +272,14 @@ pub fn apply_history_item(id: &str) -> R<()> {
     set_live(item)
 }
 
+/// Arclet's `INJECTED_INPUT_TAG` (arclet-core `action.rs`): the dial's keyboard hook passes
+/// keys carrying it through to the app instead of swallowing them while the dial is open.
+const INJECTED_INPUT_TAG: usize = 0x4152_434C; // "ARCL"
+
 fn key(vk: VIRTUAL_KEY, up: bool) -> INPUT {
     INPUT {
         r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: vk, wScan: 0, dwFlags: if up { KEYEVENTF_KEYUP } else { KEYBD_EVENT_FLAGS(0) }, time: 0, dwExtraInfo: 0 } },
+        Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: vk, wScan: 0, dwFlags: if up { KEYEVENTF_KEYUP } else { KEYBD_EVENT_FLAGS(0) }, time: 0, dwExtraInfo: INJECTED_INPUT_TAG } },
     }
 }
 
