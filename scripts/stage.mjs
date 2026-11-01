@@ -1,5 +1,5 @@
 // Copies the freshly built plugins into out/ under their release names:
-//   <dir>_<os>_<version>.knobdeck, <dir>_<os>_readme.md, <dir>_<os>_icon.<svg|png>
+//   <dir>_<os>_<version>.knobdeck, <dir>_<os>_readme.md (icons are not release assets: registry.mjs links them in the repo)
 // and writes out/part-<os>.json, the registry entries of this build (registry.mjs merges them).
 //   node scripts/stage.mjs <os> <dir>...
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -25,16 +25,9 @@ for (const dir of dirs) {
     readmeFile = `${dir}_${os}_readme.md`;
     copyFileSync(join(unpacked, "readme.md"), join("out", readmeFile));
   }
-  let iconFile = null;
-  const iconPath = m.icon && [join(unpacked, "icons", m.icon), join(unpacked, m.icon)].find((p) => /\.(svg|png)$/i.test(p) && existsSync(p));
-  if (iconPath) {
-    iconFile = `${dir}_${os}_icon${iconPath.slice(iconPath.lastIndexOf("."))}`;
-    copyFileSync(iconPath, join("out", iconFile));
-  }
-
   entries.push({
     dir, id: m.id, version: m.version, description: m.description ?? "", author: m.author ?? null,
-    icon: m.icon ?? null, platforms: m.platforms, file, readmeFile, iconFile,
+    icon: m.icon ?? null, platforms: m.platforms, file, readmeFile,
     sha256: createHash("sha256").update(readFileSync(join("out", file))).digest("hex"),
   });
   console.log(`${m.id} ${m.version}`);

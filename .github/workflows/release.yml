@@ -2,7 +2,7 @@
 # the plugins whose index.json version changed (scripts/plan.mjs), each on its own OS, and publishes a GitHub
 # Release tagged with the UTC date and time (v2026.11.02-2341). The release always holds every
 # plugin: the ones that did not change are copied over from the previous release (scripts/registry.mjs).
-# Each plugin ships as <dir>_<os>_<version>.knobdeck (plus readme/icon), and the release has one
+# Each plugin ships as <dir>_<os>_<version>.knobdeck (plus its readme; icons are hot-linked from the repo), and the release has one
 # registry.json describing them all; the website repo pulls that on its own schedule. Pull requests only build.
 name: release
 on:
@@ -47,7 +47,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install knobdeck-plugin
-        run: cargo install --git https://github.com/HarshalKudale/arclet-sdk-rust --bin knobdeck-plugin --locked
+        run: cargo install --git https://github.com/HarshalKudale/knobdeck-sdk --bin knobdeck-plugin --locked
       - name: Discord build-time settings
         shell: bash
         run: |

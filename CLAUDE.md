@@ -74,3 +74,9 @@ Current decisions (keep this list up to date):
 - Live tests that touch the user's screen (moving windows, opening Mission Control) are
   `#[ignore]` and act only on windows they create themselves. Ask before running anything that
   takes over the user's display.
+
+## Rule 3: a change to a plugin bumps its version
+
+- Any code change to a plugin bumps its `version` in `Cargo.toml`.
+- Put the same version in `index.json`. CI builds only plugins whose `index.json` version differs from the previous release's `registry.json` and copies every other plugin's artifact over from that release, so without the bump your change is not published.
+- Icons are not release assets: the registry links `<dir>/icons/<icon>` by raw GitHub URL, so changing an icon file needs no version bump.
