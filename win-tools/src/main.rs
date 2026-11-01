@@ -241,7 +241,7 @@ mod app {
 
     pub fn run() -> ! {
         let mut p = Plugin::new("win-tools", "Win Tools")
-            .version("1.0.0")
+            .version("1.1.0")
             .author("Arclet")
             .description("Advanced window management: snap, resize, transparency, always-on-top, per-app volume, and more.")
             .icon("app-window")
