@@ -15,6 +15,8 @@ Window management and system tools for Arclet on **macOS** — the macOS counter
   System Settings / Activity Monitor.
 - **System Stats:** live CPU, GPU or memory use on the tile; pressing it opens Activity Monitor.
 - **Audio:** Mute Microphone toggle, and wheels to switch the output or input device.
+- **Text Snippet:** types saved text into whatever has focus, or with Paste mode on, copies it to
+  the clipboard and pastes it.
 - **Clipboard History:** the last 16 copies (text, rich text, images, files); picking one pastes it.
 
 ## Permissions

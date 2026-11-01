@@ -11,6 +11,8 @@ use [Mac Tools](../mac-tools).
 - Includes dynamic wheels for choosing target windows live.
 - Switch, create and close virtual desktops; Task View, Show Desktop, Lock PC, Screen Snip,
   File Explorer, Settings, Run, Emoji Panel and Task Manager shortcuts.
+- Text Snippet: types saved text into the focused window, or with Paste mode on, copies it to the
+  clipboard and pastes it.
 - System Stats button: shows live CPU, GPU or memory use on the tile and opens Task Manager when pressed.
 - Position and monitor moves now apply real window bounds, and moved windows are
   raised on the target monitor without taking focus away from the current app.

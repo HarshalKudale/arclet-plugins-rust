@@ -498,6 +498,18 @@ mod app {
             // No API opens the Force Quit window; ⌥⌘Esc is reserved by loginwindow, so no app can capture it.
             .action(keys_button("force-quit", "Force Quit…", "circle-x", "cmd alt esc"))
             .action(Action::button("lock-screen", "Lock Screen").icon("lock").on_press(|_| system::lock_screen()))
+            .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(snippet_inputs()).on_press(|ctx| {
+                let text = ctx.input_str("text");
+                if text.is_empty() {
+                    ctx.set_error("Add the snippet's text first");
+                    Ok(())
+                } else if ctx.input_bool("paste") {
+                    clipboard::set_text(&text)?;
+                    system::paste()
+                } else {
+                    system::type_text(&text)
+                }
+            }))
             .action(open_button("finder", "Finder", "folder-open", "com.apple.finder"))
             .action(open_button("open-settings", "System Settings", "settings", "com.apple.systempreferences"))
             .action(open_button("activity-monitor", "Activity Monitor", "activity", "com.apple.ActivityMonitor"))
@@ -573,6 +585,10 @@ mod app {
                 }),
         )
         .run()
+    }
+
+    fn snippet_inputs() -> Vec<Value> {
+        vec![input::textarea("text", "Text"), input::checkbox("paste", "Paste mode (copy to the clipboard and paste instead of typing)")]
     }
 
     fn center_button(id: &str, label: &str) -> Action {

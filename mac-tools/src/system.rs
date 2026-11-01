@@ -195,6 +195,37 @@ extern "C" {
     fn CGEventSetFlags(ev: *mut c_void, flags: u64);
     fn CGEventSetIntegerValueField(ev: *mut c_void, field: u32, value: i64);
     fn CGEventPost(tap: u32, ev: *mut c_void);
+    fn CGEventKeyboardSetUnicodeString(ev: *mut c_void, len: usize, chars: *const u16);
+}
+
+/// Type `text` into whatever has focus. A keystroke on purpose: the action *is* typing.
+/// Each character rides on a key event as a Unicode string (layout-independent); line
+/// breaks press Return (keycode 36), which apps expect instead of a U+000A character.
+pub fn type_text(text: &str) -> Result {
+    ax::ensure_trusted()?;
+    for c in text.chars().filter(|&c| c != '\r') {
+        let mut buf = [0u16; 2];
+        let units = c.encode_utf16(&mut buf);
+        for down in [true, false] {
+            unsafe {
+                let ev = CGEventCreateKeyboardEvent(std::ptr::null(), if c == '\n' { 36 } else { 0 }, down);
+                if ev.is_null() {
+                    return Err(Error::msg("Couldn't create the key event"));
+                }
+                // No modifier flags: a held ⌘/⌥ (e.g. from the dial's trigger) must not turn letters into shortcuts.
+                CGEventSetFlags(ev, 0);
+                if c != '\n' {
+                    CGEventKeyboardSetUnicodeString(ev, units.len(), units.as_ptr());
+                }
+                CGEventSetIntegerValueField(ev, FIELD_SOURCE_USER_DATA, INJECTED_INPUT_TAG);
+                CGEventPost(0, ev); // kCGHIDEventTap
+                core_foundation::base::CFRelease(ev);
+            }
+        }
+        // Apps drop characters when events arrive faster than their run loop drains them.
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    Ok(())
 }
 
 /// Arclet's tag for its own injected input (`arclet_core::action::INJECTED_INPUT_TAG`),

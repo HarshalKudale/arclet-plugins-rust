@@ -181,6 +181,19 @@ pub fn restore(e: &Entry) -> arclet_sdk::Result {
     })
 }
 
+/// Replace the pasteboard with plain `text`.
+pub fn set_text(text: &str) -> arclet_sdk::Result {
+    autoreleasepool(|_| {
+        let pb = NSPasteboard::generalPasteboard();
+        pb.clearContents();
+        if pb.setString_forType(&NSString::from_str(text), &NSString::from_str("public.utf8-plain-text")) {
+            Ok(())
+        } else {
+            Err(arclet_sdk::Error::msg("Couldn't put the snippet on the clipboard"))
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

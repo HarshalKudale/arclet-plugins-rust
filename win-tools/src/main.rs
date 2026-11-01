@@ -498,7 +498,19 @@ mod app {
                     }),
             )
             // Win+L can't be injected via SendInput, so lock through the API.
-            .action(Action::button("lock-pc", "Lock PC").icon("lock").on_press(|_| win32::lock_workstation()));
+            .action(Action::button("lock-pc", "Lock PC").icon("lock").on_press(|_| win32::lock_workstation()))
+            .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(snippet_inputs()).on_press(|ctx| {
+                let text = ctx.input_str("text");
+                if text.is_empty() {
+                    ctx.set_error("Add the snippet's text first");
+                } else if ctx.input_bool("paste") {
+                    clipboard::set_text(&text)?;
+                    clipboard::send_paste();
+                } else {
+                    clipboard::type_text(&text);
+                }
+                Ok(())
+            }));
 
         // ── Clipboard History ──
         p.action(
@@ -571,6 +583,10 @@ mod app {
     /// resort only: use it when no API or shell target does the job (see CLAUDE.md).
     fn keys_button(id: &str, label: &str, icon: &str, keys: &'static str) -> Action {
         Action::button(id, label).icon(icon).on_press(move |_| arclet_sdk::send_keys(keys))
+    }
+
+    fn snippet_inputs() -> Vec<Value> {
+        vec![input::textarea("text", "Text"), input::checkbox("paste", "Paste mode (copy to the clipboard and paste instead of typing)")]
     }
 
     fn center_button(id: &str, label: &str) -> Action {

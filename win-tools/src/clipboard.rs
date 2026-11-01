@@ -12,9 +12,10 @@ use std::ffi::c_void;
 use std::time::Duration;
 use windows::ApplicationModel::DataTransfer::{Clipboard, ClipboardHistoryItem};
 use windows::Win32::Foundation::{HGLOBAL, HWND};
-use windows::Win32::System::DataExchange::{CloseClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard};
-use windows::Win32::System::Memory::{GlobalLock, GlobalSize, GlobalUnlock};
-use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, VIRTUAL_KEY, VK_CONTROL, VK_V};
+use windows::Win32::Foundation::{GlobalFree, HANDLE};
+use windows::Win32::System::DataExchange::{CloseClipboard, EmptyClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard, SetClipboardData};
+use windows::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalSize, GlobalUnlock, GMEM_MOVEABLE};
+use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE, VIRTUAL_KEY, VK_CONTROL, VK_RETURN, VK_V};
 use windows::Win32::UI::Shell::{DragQueryFileW, HDROP};
 
 type R<T> = arclet_sdk::Result<T>;
@@ -276,10 +277,59 @@ pub fn apply_history_item(id: &str) -> R<()> {
 /// keys carrying it through to the app instead of swallowing them while the dial is open.
 const INJECTED_INPUT_TAG: usize = 0x4152_434C; // "ARCL"
 
+fn key_input(vk: VIRTUAL_KEY, scan: u16, flags: KEYBD_EVENT_FLAGS, up: bool) -> INPUT {
+    let flags = if up { flags | KEYEVENTF_KEYUP } else { flags };
+    INPUT { r#type: INPUT_KEYBOARD, Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: vk, wScan: scan, dwFlags: flags, time: 0, dwExtraInfo: INJECTED_INPUT_TAG } } }
+}
+
 fn key(vk: VIRTUAL_KEY, up: bool) -> INPUT {
-    INPUT {
-        r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: vk, wScan: 0, dwFlags: if up { KEYEVENTF_KEYUP } else { KEYBD_EVENT_FLAGS(0) }, time: 0, dwExtraInfo: INJECTED_INPUT_TAG } },
+    key_input(vk, 0, KEYBD_EVENT_FLAGS(0), up)
+}
+
+/// Type `text` into whichever window has input focus, as Unicode key events (layout-independent).
+/// A keystroke on purpose: the action *is* typing. Line breaks press Enter, which apps expect
+/// instead of a U+000A character.
+pub fn type_text(text: &str) {
+    let mut inputs = Vec::with_capacity(text.len() * 2);
+    for c in text.chars().filter(|&c| c != '\r') {
+        let mut buf = [0u16; 2];
+        for up in [false, true] {
+            if c == '\n' {
+                inputs.push(key(VK_RETURN, up));
+            } else {
+                inputs.extend(c.encode_utf16(&mut buf).iter().map(|&u| key_input(VIRTUAL_KEY(0), u, KEYEVENTF_UNICODE, up)));
+            }
+        }
+    }
+    if !inputs.is_empty() {
+        unsafe { SendInput(&inputs, std::mem::size_of::<INPUT>() as i32) };
+    }
+}
+
+/// Replace the live clipboard with `text` (CF_UNICODETEXT).
+pub fn set_text(text: &str) -> R<()> {
+    let wide: Vec<u16> = text.encode_utf16().chain(Some(0)).collect();
+    let bytes = wide.len() * 2;
+    unsafe {
+        OpenClipboard(HWND::default()).map_err(|e| werr("OpenClipboard", e))?;
+        let result = (|| {
+            EmptyClipboard().map_err(|e| werr("EmptyClipboard", e))?;
+            let g = GlobalAlloc(GMEM_MOVEABLE, bytes).map_err(|e| werr("GlobalAlloc", e))?;
+            let p = GlobalLock(g) as *mut u16;
+            if p.is_null() {
+                let _ = GlobalFree(g);
+                return Err(arclet_sdk::Error::msg("GlobalLock failed"));
+            }
+            std::ptr::copy_nonoverlapping(wide.as_ptr(), p, wide.len());
+            let _ = GlobalUnlock(g);
+            // On success the clipboard owns the memory; on failure it is still ours to free.
+            SetClipboardData(CF_UNICODETEXT, HANDLE(g.0)).map(|_| ()).map_err(|e| {
+                let _ = GlobalFree(g);
+                werr("SetClipboardData", e)
+            })
+        })();
+        let _ = CloseClipboard();
+        result
     }
 }
 
