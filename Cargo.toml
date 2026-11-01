@@ -3,8 +3,7 @@ resolver = "2"
 members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "mac-tools", "claude"]
 
 [workspace.dependencies]
-# `macos-support` until that SDK branch is merged into master; then drop `branch`.
-knobdeck-sdk = { git = "https://github.com/HarshalKudale/arclet-sdk-rust.git", branch = "macos-support" }
+knobdeck-sdk = { git = "https://github.com/HarshalKudale/arclet-sdk-rust.git" }
 ureq = { version = "2", features = ["json"] }
 base64 = "0.22"
 serde_json = "1"
