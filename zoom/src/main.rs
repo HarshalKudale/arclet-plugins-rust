@@ -153,7 +153,7 @@ fn reset_meeting() {
 
 fn main() {
     Plugin::new(if cfg!(target_os = "macos") { "zoom-macos" } else { "zoom-windows" }, "Zoom")
-        .version("1.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control Zoom — mute, video, screen share, raise hand, recording & more.")

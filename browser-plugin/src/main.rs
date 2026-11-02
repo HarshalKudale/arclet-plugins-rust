@@ -251,7 +251,7 @@ const PREV_TAB: &str = per_os("ctrl pgup", "ctrl shift tab");
 
 fn main() {
     let mut plugin = Plugin::new(if cfg!(target_os = "macos") { "browser-plugin-macos" } else { "browser-plugin-windows" }, "BrowserPlugin")
-        .version("1.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows and macOS.")

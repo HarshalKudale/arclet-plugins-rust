@@ -289,7 +289,7 @@ fn main() {
     }
 
     Plugin::new(if cfg!(target_os = "macos") { "obs-macos" } else { "obs-windows" }, "OBS Studio")
-        .version("1.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control OBS Studio — record, stream, scenes, sources & more.")

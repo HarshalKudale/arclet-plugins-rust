@@ -56,6 +56,7 @@ Current decisions (keep this list up to date):
 ## Rule 2: both OSes stay working
 
 - Cross-platform plugins ship one package per OS: ids `<name>-windows` / `<name>-macos`, `.platforms(&[std::env::consts::OS])` (actions inherit it). CI builds each on its own OS.
+- To ship a plugin, bump `version` in its `Cargo.toml` and merge to master; CI builds only plugins whose version differs from the previous release, copies the rest over from it and publishes one release holding every plugin (see `.github/workflows/release.yml`).
 
 - A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam
   per concern (e.g. `claude/src/win.rs` / `mac.rs` behind `mod os`).

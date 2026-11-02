@@ -390,7 +390,7 @@ mod app {
 
     pub fn run() -> ! {
         let mut p = Plugin::new("mac-tools", "Mac Tools")
-            .version("1.0.0")
+            .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
             .description("macOS window management (snap, fill, full screen, displays), window switcher, Spaces and system shortcuts, live stats, audio devices, mic mute and clipboard history.")
             .icon("app-window")

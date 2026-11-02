@@ -438,7 +438,7 @@ fn select_text_channel(c: &Rpc, channel_id: &str, guild_id: &str) -> Result {
 
 fn main() {
     let plugin = Plugin::new(if cfg!(target_os = "macos") { "discord-macos" } else { "discord-windows" }, "Discord")
-        .version("1.0.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control Discord — mute, deafen, PTT, channels, volume, soundboard & more.")

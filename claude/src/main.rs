@@ -178,7 +178,7 @@ mod app {
 
     pub fn run() {
         Plugin::new(if cfg!(target_os = "macos") { "claude-macos" } else { "claude-windows" }, "Claude")
-            .version("1.0.0")
+            .version(env!("CARGO_PKG_VERSION"))
             .author("KnobDeck")
             .description("See and switch between running Claude Code sessions, turn on Remote Control, view usage and reopen recent sessions. Read-only: no prompts, no AI calls.")
             .icon("bot")

@@ -1,21 +1,44 @@
-# Push a tag (git tag v2026.11.0 && git push --tags) to build every plugin on its own OS and attach
-# the .knobdeck bundles plus registry-<os>.json to a GitHub Release. The website reads the latest
-# release's registry-*.json, so there is nothing to sync by hand. Pull requests only build.
+# Bump `version` in a plugin's Cargo.toml and merge to master to ship it. Every push to master builds
+# the plugins whose version changed (scripts/plan.mjs), each on its own OS, and publishes a GitHub
+# Release tagged with the UTC date and time (v2026.11.02-2341). The release always holds every
+# plugin: the ones that did not change are copied over from the previous release (scripts/reuse.mjs).
+# Each plugin ships as <dir>_<os>_<version>.knobdeck plus <dir>_<os>_manifest.json (and readme/icon);
+# the website repo pulls the latest release on its own schedule to build its registry. Pull requests only build.
 name: release
 on:
   push:
-    tags: ["v*"]
+    branches: [master]
   pull_request:
 permissions:
   contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  GH_TOKEN: ${{ github.token }}
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      tag: ${{ steps.plan.outputs.tag }}
+      prev: ${{ steps.plan.outputs.prev }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        run: |
+          prev=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
+          mkdir prev
+          if [ -n "$prev" ]; then gh release download "$prev" -p '*_manifest.json' -D prev; fi
+          echo "prev=$prev" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(node scripts/plan.mjs prev)" >> "$GITHUB_OUTPUT"
+          echo "tag=v$(date -u +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
   build:
+    needs: plan
+    if: needs.plan.outputs.matrix != '{"include":[]}'
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - { os: windows-latest, name: windows, plugins: "browser-plugin claude discord intellij obs vlc vscode win-tools zoom" }
-          - { os: macos-latest, name: macos, plugins: "browser-plugin claude discord intellij mac-tools obs vlc vscode zoom" }
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -34,11 +57,22 @@ jobs:
           for d in ${{ matrix.plugins }}; do
             (cd "$d" && knobdeck-plugin build && knobdeck-plugin package)
           done
-          mkdir out && cp */dist/*.knobdeck out/
-          node scripts/registry-entries.mjs ${{ matrix.name }} "${GITHUB_REF_NAME}"
+          node scripts/stage.mjs ${{ matrix.name }} ${{ matrix.plugins }}
       - uses: actions/upload-artifact@v4
         with: { name: "bundles-${{ matrix.name }}", path: "out/*" }
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with: { files: "out/*", generate_release_notes: true }
+  publish:
+    needs: [plan, build]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { pattern: "bundles-*", path: out, merge-multiple: true }
+      - name: Add the unchanged plugins from the previous release
+        if: needs.plan.outputs.prev != ''
+        run: |
+          mkdir prev
+          gh release download "${{ needs.plan.outputs.prev }}" -p '*_manifest.json' -D prev
+          node scripts/reuse.mjs "${{ needs.plan.outputs.prev }}" prev
+      - name: Release
+        run: gh release create "${{ needs.plan.outputs.tag }}" out/* --target "$GITHUB_SHA" --generate-notes
