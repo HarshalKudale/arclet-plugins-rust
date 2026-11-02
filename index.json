@@ -1,0 +1,14 @@
+{
+  "plugins": {
+    "browser-plugin": "1.0.0",
+    "claude": "1.0.0",
+    "discord": "1.0.0",
+    "intellij": "1.0.0",
+    "mac-tools": "1.0.0",
+    "obs": "1.0.0",
+    "vlc": "1.0.0",
+    "vscode": "1.0.0",
+    "win-tools": "1.1.0",
+    "zoom": "1.0.0"
+  }
+}

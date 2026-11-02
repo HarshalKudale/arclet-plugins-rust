@@ -1,5 +1,5 @@
-# Bump `version` in a plugin's Cargo.toml and merge to master to ship it. Every push to master builds
-# the plugins whose version changed (scripts/plan.mjs), each on its own OS, and publishes a GitHub
+# Bump a plugin's `version` in its Cargo.toml and in index.json and merge to master to ship it. Every push builds
+# the plugins whose index.json version changed (scripts/plan.mjs), each on its own OS, and publishes a GitHub
 # Release tagged with the UTC date and time (v2026.11.02-2341). The release always holds every
 # plugin: the ones that did not change are copied over from the previous release (scripts/reuse.mjs).
 # Each plugin ships as <dir>_<os>_<version>.knobdeck plus <dir>_<os>_manifest.json (and readme/icon);
