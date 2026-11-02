@@ -29,7 +29,9 @@ jobs:
         run: |
           prev=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
           mkdir prev
-          if [ -n "$prev" ]; then gh release download "$prev" -p '*_manifest.json' -D prev; fi
+          # A release without manifests (made before this scheme) counts as no previous release.
+          if [ -n "$prev" ]; then gh release download "$prev" -p '*_manifest.json' -D prev || true; fi
+          if [ -z "$(ls prev)" ]; then prev=""; fi
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
           echo "matrix=$(node scripts/plan.mjs prev)" >> "$GITHUB_OUTPUT"
           echo "tag=v$(date -u +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
