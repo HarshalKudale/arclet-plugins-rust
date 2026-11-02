@@ -1,0 +1,44 @@
+# Push a tag (git tag v2026.11.0 && git push --tags) to build every plugin on its own OS and attach
+# the .knobdeck bundles plus registry-<os>.json to a GitHub Release. The website reads the latest
+# release's registry-*.json, so there is nothing to sync by hand. Pull requests only build.
+name: release
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+permissions:
+  contents: write
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: windows, plugins: "browser-plugin claude discord intellij obs vlc vscode win-tools zoom" }
+          - { os: macos-latest, name: macos, plugins: "browser-plugin claude discord intellij mac-tools obs vlc vscode zoom" }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install knobdeck-plugin
+        run: cargo install --git https://github.com/HarshalKudale/arclet-sdk-rust --bin knobdeck-plugin --locked
+      - name: Discord build-time settings
+        shell: bash
+        run: |
+          printf 'DISCORD_CLIENT_ID=%s\nKNOBDECK_DISCORD_TOKEN_URL=%s\n' \
+            '${{ vars.DISCORD_CLIENT_ID }}' '${{ vars.KNOBDECK_DISCORD_TOKEN_URL }}' > discord/.env
+      - name: Package plugins
+        shell: bash
+        run: |
+          for d in ${{ matrix.plugins }}; do
+            (cd "$d" && knobdeck-plugin build && knobdeck-plugin package)
+          done
+          mkdir out && cp */dist/*.knobdeck out/
+          node scripts/registry-entries.mjs ${{ matrix.name }} "${GITHUB_REF_NAME}"
+      - uses: actions/upload-artifact@v4
+        with: { name: "bundles-${{ matrix.name }}", path: "out/*" }
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with: { files: "out/*", generate_release_notes: true }

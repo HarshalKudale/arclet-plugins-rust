@@ -118,8 +118,9 @@ fn command_button(id: &str, label: &str, icon: &str, command: &'static str, para
 
 fn main() {
     load_env();
-    Plugin::new("vlc", "VLC")
+    Plugin::new(if cfg!(target_os = "macos") { "vlc-macos" } else { "vlc-windows" }, "VLC")
         .version("1.0.0")
+        .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control VLC over its built-in HTTP interface.")
         .ack_timeout_ms(5000)

@@ -5,8 +5,7 @@ Rust ports of the first-party [KnobDeck](https://github.com/HarshalKudale/Arclet
 generates the **same `actions.json` as its JS original** (same action ids, inputs, states), so
 placed slices carry over.
 
-Every plugin runs on **Windows and macOS** except the two OS-specific tool plugins, which are
-declared with `platforms` so KnobDeck only offers each one on its own OS.
+Every cross-platform plugin ships as two packages (`<id>-windows`, `<id>-macos`), each built on its own OS and declaring its `platforms`. `win-tools` and `mac-tools` are already OS-specific. KnobDeck only offers and installs packages for its own OS.
 
 | Plugin | Description | OS |
 |--------|-------------|----|
@@ -40,12 +39,6 @@ All crates share one Cargo workspace (`cargo build --workspace`, one `target/`).
 
 The workspace uses the SDK's `macos-support` branch (the plugins need its `platforms` and per-OS
 `executables` support). Drop `branch` in `Cargo.toml` once it is merged into the SDK's master.
-
-### One package for both OSes
-
-`knobdeck-plugin build` records the binary under `runtime.executables["<os>"]`. Build on Windows,
-copy `dist/<id>/` to the Mac (or the other way round), build again there, then `package`: the
-manifest keeps both entries and the `.knobdeck` runs on both.
 
 ### Checking Windows from a Mac
 

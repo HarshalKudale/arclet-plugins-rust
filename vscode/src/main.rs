@@ -130,8 +130,9 @@ const SIMPLE: &[(&str, &str, &str, &str)] = &[
 
 fn main() {
     load_env();
-    let mut plugin = Plugin::new("vscode", "VS Code")
+    let mut plugin = Plugin::new(if cfg!(target_os = "macos") { "vscode-macos" } else { "vscode-windows" }, "VS Code")
         .version("1.0.0")
+        .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control Visual Studio Code through the KnobDeck VS Code companion extension.")
         .icon("vscode-logo.svg")

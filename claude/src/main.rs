@@ -177,12 +177,12 @@ mod app {
     }
 
     pub fn run() {
-        Plugin::new("claude", "Claude")
+        Plugin::new(if cfg!(target_os = "macos") { "claude-macos" } else { "claude-windows" }, "Claude")
             .version("1.0.0")
             .author("KnobDeck")
             .description("See and switch between running Claude Code sessions, turn on Remote Control, view usage and reopen recent sessions. Read-only: no prompts, no AI calls.")
             .icon("bot")
-            .platforms(&["windows", "macos"])
+            .platforms(&[std::env::consts::OS])
             // ── Running sessions (dynamic wheel + live status dots on the tile) ──
             .action(
                 Action::wheel("sessions", "Claude Sessions")

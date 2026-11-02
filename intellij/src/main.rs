@@ -83,8 +83,9 @@ const ACTIONS: &[(&str, &str, &str, &str, Kind)] = &[
 
 fn main() {
     load_env();
-    let mut plugin = Plugin::new("intellij", "IntelliJ IDE")
+    let mut plugin = Plugin::new(if cfg!(target_os = "macos") { "intellij-macos" } else { "intellij-windows" }, "IntelliJ IDE")
         .version("1.0.0")
+        .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control IntelliJ IDEs through the KnobDeck IntelliJ companion plugin.")
         .icon("intellij-logo.svg")

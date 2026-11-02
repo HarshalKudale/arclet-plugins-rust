@@ -288,8 +288,9 @@ fn main() {
         std::thread::spawn(move || obs_ws::run(host, port, password, sync_obs_state, on_event, on_closed));
     }
 
-    Plugin::new("obs", "OBS Studio")
+    Plugin::new(if cfg!(target_os = "macos") { "obs-macos" } else { "obs-windows" }, "OBS Studio")
         .version("1.0.0")
+        .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
         .description("Control OBS Studio — record, stream, scenes, sources & more.")
         .icon("obs-logo.svg")
