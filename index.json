@@ -1,14 +1,109 @@
 {
   "plugins": {
-    "browser-plugin": "1.0.0",
-    "claude": "1.0.0",
-    "discord": "1.0.0",
-    "intellij": "1.0.0",
-    "mac-tools": "1.0.0",
-    "obs": "1.0.0",
-    "vlc": "1.0.0",
-    "vscode": "1.0.0",
-    "win-tools": "1.1.0",
-    "zoom": "1.0.0"
+    "browser-plugin": {
+      "version": "1.0.0",
+      "name": "Browser Controls",
+      "summary": "Shortcuts, bookmarks and history for your browser.",
+      "tags": [
+        "Browser",
+        "Automation"
+      ],
+      "sort": 50
+    },
+    "claude": {
+      "version": "1.0.0",
+      "name": "Claude Code",
+      "summary": "Running Claude Code sessions, usage and Remote Control.",
+      "tags": [
+        "Developer tools",
+        "AI"
+      ],
+      "sort": 90
+    },
+    "discord": {
+      "version": "1.0.0",
+      "name": "Discord",
+      "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
+      "tags": [
+        "Communication",
+        "Voice"
+      ],
+      "featured": true,
+      "sort": 10
+    },
+    "intellij": {
+      "version": "1.0.0",
+      "name": "IntelliJ IDEA",
+      "summary": "JetBrains IDE actions on a key.",
+      "tags": [
+        "Developer tools",
+        "IDE"
+      ],
+      "sort": 70
+    },
+    "mac-tools": {
+      "version": "1.0.0",
+      "name": "macOS Tools",
+      "summary": "Window management, Spaces, audio devices, clipboard history.",
+      "tags": [
+        "macOS",
+        "Automation"
+      ],
+      "featured": true,
+      "sort": 41
+    },
+    "obs": {
+      "version": "1.0.0",
+      "name": "OBS Studio",
+      "summary": "Scenes, sources, recording and streaming.",
+      "tags": [
+        "Streaming",
+        "Broadcast"
+      ],
+      "featured": true,
+      "sort": 20
+    },
+    "vlc": {
+      "version": "1.0.0",
+      "name": "VLC",
+      "summary": "Playback controls for VLC media player.",
+      "tags": [
+        "Media",
+        "Playback"
+      ],
+      "sort": 80
+    },
+    "vscode": {
+      "version": "1.0.0",
+      "name": "Visual Studio Code",
+      "summary": "Editor commands through the KnobDeck VS Code extension.",
+      "tags": [
+        "Developer tools",
+        "Editor"
+      ],
+      "featured": true,
+      "sort": 30
+    },
+    "win-tools": {
+      "version": "1.1.0",
+      "name": "Windows Tools",
+      "summary": "Window management, per-app volume, clipboard history.",
+      "tags": [
+        "Windows",
+        "Automation"
+      ],
+      "featured": true,
+      "sort": 40
+    },
+    "zoom": {
+      "version": "1.0.0",
+      "name": "Zoom",
+      "summary": "Meeting controls for Zoom calls.",
+      "tags": [
+        "Communication",
+        "Meetings"
+      ],
+      "sort": 60
+    }
   }
 }

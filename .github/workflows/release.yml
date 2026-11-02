@@ -1,9 +1,9 @@
-# Bump a plugin's `version` in its Cargo.toml and in index.json and merge to master to ship it. Every push builds
+# Bump a plugin's `version` in its Cargo.toml and in index.json (which also holds its display text) and merge to master to ship it. Every push builds
 # the plugins whose index.json version changed (scripts/plan.mjs), each on its own OS, and publishes a GitHub
 # Release tagged with the UTC date and time (v2026.11.02-2341). The release always holds every
-# plugin: the ones that did not change are copied over from the previous release (scripts/reuse.mjs).
-# Each plugin ships as <dir>_<os>_<version>.knobdeck plus <dir>_<os>_manifest.json (and readme/icon);
-# the website repo pulls the latest release on its own schedule to build its registry. Pull requests only build.
+# plugin: the ones that did not change are copied over from the previous release (scripts/registry.mjs).
+# Each plugin ships as <dir>_<os>_<version>.knobdeck (plus readme/icon), and the release has one
+# registry.json describing them all; the website repo pulls that on its own schedule. Pull requests only build.
 name: release
 on:
   push:
@@ -29,11 +29,11 @@ jobs:
         run: |
           prev=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
           mkdir prev
-          # A release without manifests (made before this scheme) counts as no previous release.
-          if [ -n "$prev" ]; then gh release download "$prev" -p '*_manifest.json' -D prev || true; fi
-          if [ -z "$(ls prev)" ]; then prev=""; fi
+          # A release without registry.json (made before this scheme) counts as no previous release.
+          if [ -n "$prev" ]; then gh release download "$prev" -p registry.json -D prev || true; fi
+          if [ ! -f prev/registry.json ]; then prev=""; fi
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
-          echo "matrix=$(node scripts/plan.mjs prev)" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(node scripts/plan.mjs prev/registry.json)" >> "$GITHUB_OUTPUT"
           echo "tag=v$(date -u +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
   build:
     needs: plan
@@ -70,11 +70,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with: { pattern: "bundles-*", path: out, merge-multiple: true }
-      - name: Add the unchanged plugins from the previous release
-        if: needs.plan.outputs.prev != ''
+      - name: Build registry.json (adds the unchanged plugins from the previous release)
         run: |
-          mkdir prev
-          gh release download "${{ needs.plan.outputs.prev }}" -p '*_manifest.json' -D prev
-          node scripts/reuse.mjs "${{ needs.plan.outputs.prev }}" prev
+          if [ -n "${{ needs.plan.outputs.prev }}" ]; then
+            mkdir prev
+            gh release download "${{ needs.plan.outputs.prev }}" -p registry.json -D prev
+            node scripts/registry.mjs "${{ needs.plan.outputs.tag }}" "${{ needs.plan.outputs.prev }}" prev/registry.json
+          else
+            node scripts/registry.mjs "${{ needs.plan.outputs.tag }}"
+          fi
       - name: Release
         run: gh release create "${{ needs.plan.outputs.tag }}" out/* --target "$GITHUB_SHA" --generate-notes
