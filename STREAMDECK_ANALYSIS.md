@@ -357,6 +357,7 @@ reuses one client.
 | win-tools 1.2.0: audio devices (#1, #10, #16) — Mute Microphone, Push to Talk, Output/Input Device wheels, Set Audio Device, Toggle Audio Device, Mute Device, Device Volume | done (switching between two different devices not yet tried on a machine with two) |
 | obs 1.1.0 (#2, #12): Previous Scene, Preview Scene, Source Volume dial, OBS Stats, Browser Source refresh/URL | done (tested against a scripted obs-websocket server, not a live OBS). Not done: source animation, instant-replay playback, second OBS on another PC |
 | win-tools 1.3.0 (#11): Wi-Fi / Bluetooth toggle, Power Plan key + wheel, Ping | done (radios read, not switched, in tests). Not done: Windows services (needs admin), Multi-Clip (clipboard history covers it) |
+| win-tools 1.4.0 (#20): Move App Window — a named app's window to any position/monitor, thirds, custom bounds | done. Not done: moving a window to another virtual desktop (no public API) |
 
 ## 8. Suggested order
 

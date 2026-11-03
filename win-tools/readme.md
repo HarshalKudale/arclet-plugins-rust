@@ -12,6 +12,8 @@ use [Mac Tools](../mac-tools).
   recording device (one key, an A/B toggle, or a wheel), and set any device's volume or mute.
   The switch can set the default device, the communications device, or both.
 - Includes dynamic wheels for choosing target windows live.
+- Move App Window: snap, center, maximize, minimize, fullscreen or place a chosen app's window
+  (for example Discord to the right half of monitor 2) whether or not it has focus.
 - Switch, create and close virtual desktops; Task View, Show Desktop, Lock PC, Screen Snip,
   File Explorer, Settings, Run, Emoji Panel and Task Manager shortcuts.
 - Text Snippet: types saved text into the focused window, or with Paste mode on, copies it to the

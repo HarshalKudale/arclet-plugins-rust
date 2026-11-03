@@ -534,7 +534,45 @@ mod app {
                 win32::make_fullscreen(hwnd, win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?.monitor);
                 Ok(())
             }))
-            .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::foreground_window()?, &ctx.inputs)));
+            .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::foreground_window()?, &ctx.inputs)))
+            // ── A named app's window (not just the focused one), like Windows Mover & Resizer ──
+            .query("get-open-apps", |_| {
+                let mut seen: Vec<String> = vec![];
+                for w in win32::list_open_windows() {
+                    if let Some(exe) = w.exe_name.filter(|e| !seen.iter().any(|s| s.eq_ignore_ascii_case(e))) {
+                        seen.push(exe);
+                    }
+                }
+                Ok(Value::Array(seen.into_iter().map(|e| json!({"value": e, "label": e})).collect()))
+            })
+            .action(Action::button("move-app-window", "Move App Window").icon("app-window").inputs(move_app_inputs()).on_press(|ctx| {
+                let exe = ctx.input_str("app");
+                if exe.is_empty() {
+                    return ctx.fail("Choose an app first");
+                }
+                // The app's topmost open window (EnumWindows lists in z-order).
+                let Some(w) = win32::list_open_windows().into_iter().find(|w| w.exe_name.as_deref().is_some_and(|n| n.eq_ignore_ascii_case(&exe))) else {
+                    return ctx.fail(format!("{exe} has no open window"));
+                };
+                let hwnd = w.hwnd;
+                let position = ctx.input_str("position");
+                match position.as_str() {
+                    "minimize" => return win32::minimize(Some(hwnd)),
+                    "maximize" => return win32::maximize(Some(hwnd)),
+                    "center" => win32::center_window(hwnd, work_of(hwnd, &ctx.inputs)?)?,
+                    "fullscreen" => win32::make_fullscreen(hwnd, win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?.monitor),
+                    "custom" => apply_custom_position(hwnd, &ctx.inputs)?,
+                    "front" => {}
+                    region => {
+                        let Some(r) = region_of(region) else { return ctx.fail("Choose a position") };
+                        win32::move_to_region(hwnd, work_of(hwnd, &ctx.inputs)?, r);
+                    }
+                }
+                if ctx.input_bool("focus") {
+                    win32::bring_window_to_front(hwnd);
+                }
+                Ok(())
+            }));
 
         // ── Dynamic Window Actions: window-picker wheels ──
         // "Bring to Front" is already covered by "Switch to Window", so it isn't duplicated here.
@@ -722,6 +760,61 @@ mod app {
     }
 
     static CLIPBOARD_IDS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
+
+    /// Named regions shared with the snap buttons.
+    fn region_of(name: &str) -> Option<Region> {
+        Some(match name {
+            "left-half" => reg(0.0, 0.0, 0.5, 1.0),
+            "right-half" => reg(0.5, 0.0, 0.5, 1.0),
+            "top-half" => reg(0.0, 0.0, 1.0, 0.5),
+            "bottom-half" => reg(0.0, 0.5, 1.0, 0.5),
+            "top-left" => reg(0.0, 0.0, 0.5, 0.5),
+            "top-right" => reg(0.5, 0.0, 0.5, 0.5),
+            "bottom-left" => reg(0.0, 0.5, 0.5, 0.5),
+            "bottom-right" => reg(0.5, 0.5, 0.5, 0.5),
+            "left-third" => reg(0.0, 0.0, 1.0 / 3.0, 1.0),
+            "center-third" => reg(1.0 / 3.0, 0.0, 1.0 / 3.0, 1.0),
+            "right-third" => reg(2.0 / 3.0, 0.0, 1.0 / 3.0, 1.0),
+            _ => return None,
+        })
+    }
+
+    fn move_app_inputs() -> Vec<Value> {
+        let custom = json!({"key": "position", "equals": "custom"});
+        let mut v = vec![
+            input::query_combobox("app", "App", "get-open-apps"),
+            input::select(
+                "position",
+                "Position",
+                &[
+                    ("left-half", "Left half"),
+                    ("right-half", "Right half"),
+                    ("top-half", "Top half"),
+                    ("bottom-half", "Bottom half"),
+                    ("top-left", "Top left"),
+                    ("top-right", "Top right"),
+                    ("bottom-left", "Bottom left"),
+                    ("bottom-right", "Bottom right"),
+                    ("left-third", "Left third"),
+                    ("center-third", "Center third"),
+                    ("right-third", "Right third"),
+                    ("center", "Center"),
+                    ("maximize", "Maximize"),
+                    ("minimize", "Minimize"),
+                    ("fullscreen", "Fullscreen"),
+                    ("custom", "Custom position"),
+                    ("front", "Just bring to front"),
+                ],
+            )
+            .with("default", "left-half"),
+        ];
+        // Custom X/Y/W/H (the first entry is the monitor select, which every position uses).
+        let mut extra = custom_position_inputs().into_iter();
+        v.extend(extra.next());
+        v.extend(extra.map(|i| i.with("showIf", custom.clone())));
+        v.push(input::checkbox("focus", "Bring the window to the front").with("default", true));
+        v
+    }
 
     fn radio_of(inputs: &Value) -> String {
         if inputs["radio"] == "bluetooth" { "bluetooth" } else { "wifi" }.into()
