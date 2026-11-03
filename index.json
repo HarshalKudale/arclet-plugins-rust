@@ -94,6 +94,16 @@
       "featured": true,
       "sort": 30
     },
+    "weather": {
+      "version": "1.0.0",
+      "name": "Weather",
+      "summary": "Current weather, 7-day and hourly forecast, air quality. No account.",
+      "tags": [
+        "Weather",
+        "Information"
+      ],
+      "sort": 85
+    },
     "win-tools": {
       "version": "1.4.0",
       "name": "Windows Tools",

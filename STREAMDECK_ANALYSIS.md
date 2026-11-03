@@ -360,6 +360,7 @@ reuses one client.
 | win-tools 1.4.0 (#20): Move App Window — a named app's window to any position/monitor, thirds, custom bounds | done. Not done: moving a window to another virtual desktop (no public API) |
 | SDK 0.4.0: `save_env`, `open_url`, `oauth` feature (PKCE loopback, device code, token refresh); `live` may push state | done, pushed |
 | elgato-lights 1.0.0 (#6): Power, Brightness, Temperature, Set Brightness/Temperature, Set Color, Battery; mDNS discovery | done (tested against mock lights; no real light here) |
+| weather 1.0.0 (#18): Weather, Forecast wheel, Hourly wheel, Air Quality — Open-Meteo, no key | done (tested against the live API) |
 
 ## 8. Suggested order
 

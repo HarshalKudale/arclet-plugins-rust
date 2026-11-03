@@ -1,0 +1,9 @@
+[package]
+name = "weather"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk.workspace = true
+ureq.workspace = true
