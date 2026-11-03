@@ -59,6 +59,7 @@ jobs:
         env:
           VOICEMOD_CLIENT_KEY: ${{ vars.VOICEMOD_CLIENT_KEY }}
           SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+          TWITCH_CLIENT_ID: ${{ vars.TWITCH_CLIENT_ID }}
         run: |
           for d in ${{ matrix.plugins }}; do
             (cd "$d" && knobdeck-plugin build && knobdeck-plugin package)

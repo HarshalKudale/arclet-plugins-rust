@@ -104,6 +104,17 @@
       ],
       "sort": 22
     },
+    "twitch": {
+      "version": "1.0.0",
+      "name": "Twitch",
+      "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
+      "tags": [
+        "Streaming",
+        "Communication"
+      ],
+      "featured": true,
+      "sort": 21
+    },
     "vlc": {
       "version": "1.0.0",
       "name": "VLC",
