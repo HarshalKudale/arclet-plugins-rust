@@ -16,6 +16,8 @@ use [Mac Tools](../mac-tools).
   File Explorer, Settings, Run, Emoji Panel and Task Manager shortcuts.
 - Text Snippet: types saved text into the focused window, or with Paste mode on, copies it to the
   clipboard and pastes it.
+- Wi-Fi / Bluetooth on-off, power plan keys and a power plan wheel, and a Ping key that shows
+  the latency to a host, refreshed every 5 seconds.
 - System Stats button: shows live CPU, GPU or memory use on the tile and opens Task Manager when pressed.
 - Position and monitor moves now apply real window bounds, and moved windows are
   raised on the target monitor without taking focus away from the current app.

@@ -17,6 +17,8 @@ mod clipboard;
 #[cfg(windows)]
 mod stats;
 #[cfg(windows)]
+mod system;
+#[cfg(windows)]
 mod win32;
 #[cfg(windows)]
 mod winicon;
@@ -28,7 +30,7 @@ fn main() {
 
 #[cfg(windows)]
 mod app {
-    use crate::{audio, clipboard, stats, win32, win32::Region, winicon};
+    use crate::{audio, clipboard, stats, system, win32, win32::Region, winicon};
     use knobdeck_sdk::input::{self, InputExt};
     use knobdeck_sdk::{json, log, Action, Ctx, Error, Plugin, Result, Value, Visual};
     use std::collections::HashMap;
@@ -607,6 +609,57 @@ mod app {
                         })
                     }),
             )
+            // Wi-Fi / Bluetooth on-off through WinRT Radios (the same switch as Quick Settings).
+            .action(
+                Action::toggle("radio-toggle", "Wi-Fi / Bluetooth")
+                    .icon("wifi")
+                    .volatile()
+                    .inputs(vec![input::select("radio", "Radio", &[("wifi", "Wi-Fi"), ("bluetooth", "Bluetooth")]).with("default", "wifi")])
+                    .state("off", "Off", "toggle-left")
+                    .state("on", "On", "toggle-right")
+                    .initial_with(|ic| Some((if system::radio_on(&radio_of(&ic.inputs)).unwrap_or(false) { "on" } else { "off" }).into()))
+                    .on_press(|ctx| {
+                        let kind = radio_of(&ctx.inputs);
+                        let on = system::set_radio(&kind, !system::radio_on(&kind)?)?;
+                        ctx.set_state(if on { "on" } else { "off" });
+                        Ok(())
+                    }),
+            )
+            .query("get-power-plans", |_| Ok(Value::Array(system::power_plans()?.into_iter().map(|(id, name)| json!({"value": id, "label": name})).collect())))
+            .action(
+                Action::toggle("power-plan", "Power Plan")
+                    .icon("battery-charging")
+                    .volatile()
+                    .inputs(vec![input::query_select("plan", "Power plan", "get-power-plans", &[])])
+                    .state("inactive", "Not Active", "battery")
+                    .state("active", "Active", "battery-charging")
+                    .initial_with(|ic| Some((if system::active_plan().is_ok_and(|a| a == ic.input_str("plan")) { "active" } else { "inactive" }).into()))
+                    .on_press(|ctx| {
+                        system::set_plan(&ctx.input_str("plan"))?;
+                        ctx.set_state("active");
+                        Ok(())
+                    }),
+            )
+            .action(
+                Action::wheel("power-plan-wheel", "Power Plans").icon("battery-charging").on_open(|ctx| {
+                    let active = system::active_plan().ok();
+                    let plans = system::power_plans().or_else(|e| ctx.fail(e.message().to_string()))?;
+                    // The child id is the plan GUID itself, so no lookup table is needed.
+                    Ok(plans.into_iter().take(16).map(|(id, name)| json!({"id": id, "label": name, "icon": if active.as_deref() == Some(id.as_str()) { "circle-check" } else { "battery" }})).collect())
+                })
+                .on_child_press(|ctx| system::set_plan(ctx.child_id.as_deref().unwrap_or(""))),
+            )
+            // Latency on the key, refreshed every 5 s; pressing pings now.
+            .action(
+                Action::button("ping", "Ping")
+                    .icon("activity")
+                    .inputs(vec![input::text("host", "Host").placeholder("1.1.1.1").default_value("1.1.1.1")])
+                    .live(std::time::Duration::from_secs(5), |ic| Ok(Visual::new().label(ping_label(&ic.input_str("host")))))
+                    .on_press(|ctx| {
+                        ctx.set_label(ping_label(&ctx.input_str("host")));
+                        Ok(())
+                    }),
+            )
             // Win+L can't be injected via SendInput, so lock through the API.
             .action(Action::button("lock-pc", "Lock PC").icon("lock").on_press(|_| win32::lock_workstation()))
             .action(Action::button("text-snippet", "Text Snippet").icon("text-cursor-input").inputs(snippet_inputs()).on_press(|ctx| {
@@ -669,6 +722,18 @@ mod app {
     }
 
     static CLIPBOARD_IDS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
+
+    fn radio_of(inputs: &Value) -> String {
+        if inputs["radio"] == "bluetooth" { "bluetooth" } else { "wifi" }.into()
+    }
+
+    fn ping_label(host: &str) -> String {
+        match system::ping(host, 2000) {
+            Ok(Some(ms)) => format!("{ms} ms"),
+            Ok(None) => "Timeout".into(),
+            Err(e) => e.message().to_string(),
+        }
+    }
 
     /// The `device` value meaning "whatever Windows' default device is right now".
     const DEFAULT_DEVICE: &str = "__default__";
