@@ -20,6 +20,16 @@
       ],
       "sort": 90
     },
+    "clocks": {
+      "version": "1.0.0",
+      "name": "Clocks",
+      "summary": "Clock for any time zone, world clock, countdown timer, stopwatch.",
+      "tags": [
+        "Time",
+        "Productivity"
+      ],
+      "sort": 86
+    },
     "discord": {
       "version": "1.0.2",
       "name": "Discord",

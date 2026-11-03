@@ -1,0 +1,9 @@
+[package]
+name = "clocks"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+jiff = { version = "0.2.39", features = ["tzdb-bundle-platform"] }
+knobdeck-sdk.workspace = true
