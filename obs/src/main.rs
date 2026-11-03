@@ -5,7 +5,7 @@
 mod obs_ws;
 
 use knobdeck_sdk::input::{self, InputExt};
-use knobdeck_sdk::{env_or, json, load_env, log, Action, Ctx, Plugin, Result, Runtime, Value};
+use knobdeck_sdk::{env_or, json, load_env, log, Action, Ctx, Plugin, Result, Runtime, Value, Visual};
 use obs_ws::{call, connected};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
@@ -33,6 +33,49 @@ static INSTANCES: Mutex<Option<HashMap<String, (String, Value)>>> = Mutex::new(N
 /// instanceId → scene item id, for matching SceneItemEnableStateChanged.
 static SCENE_ITEM_IDS: Mutex<Option<HashMap<String, i64>>> = Mutex::new(None);
 static RT: OnceLock<Runtime> = OnceLock::new();
+/// (current, previous) program scene, for "Previous Scene".
+static PROGRAM: Mutex<(Option<String>, Option<String>)> = Mutex::new((None, None));
+
+/// Record a program-scene change and show the scene to go back to on "Previous Scene" keys.
+fn program_changed(scene: &str) {
+    let previous = {
+        let mut p = PROGRAM.lock().unwrap();
+        if p.0.as_deref() == Some(scene) {
+            return;
+        }
+        let old = p.0.replace(scene.to_string());
+        if old.is_some() {
+            p.1 = old;
+        }
+        p.1.clone()
+    };
+    if let (Some(rt), Some(prev)) = (RT.get(), previous) {
+        rt.notify_visual("previous-scene", Visual::new().label(prev));
+    }
+}
+
+/// OBS's mixer fader is not linear in amplitude; a cubic curve keeps the dial's middle audible
+/// (50% ≈ -18 dB) instead of crowding all the change into the top few percent.
+fn percent_from_mul(mul: f64) -> f64 {
+    (mul.max(0.0).cbrt() * 100.0).round()
+}
+
+fn mul_from_percent(pct: f64) -> f64 {
+    (pct.clamp(0.0, 100.0) / 100.0).powi(3)
+}
+
+#[test]
+fn volume_curve_round_trips() {
+    for p in [0.0, 1.0, 37.0, 50.0, 100.0] {
+        assert_eq!(percent_from_mul(mul_from_percent(p)), p);
+    }
+    assert!((mul_from_percent(50.0) - 0.125).abs() < 1e-9);
+    assert_eq!(mul_from_percent(150.0), 1.0);
+}
+
+fn input_volume_percent(source: &str) -> Result<f64> {
+    Ok(percent_from_mul(call("GetInputVolume", json!({"inputName": source}))?["inputVolumeMul"].as_f64().unwrap_or(0.0)))
+}
 
 fn pick(b: bool, yes: &'static str, no: &'static str) -> &'static str {
     if b {
@@ -80,6 +123,9 @@ fn sync_obs_state() {
     let ok = |t: &str| call(t, json!({})).ok();
     let (rec, stream, vcam, rb, studio) =
         (ok("GetRecordStatus"), ok("GetStreamStatus"), ok("GetVirtualCamStatus"), ok("GetReplayBufferStatus"), ok("GetStudioModeEnabled"));
+    if let Some(scene) = ok("GetCurrentProgramScene").and_then(|r| r["currentProgramSceneName"].as_str().map(String::from)) {
+        program_changed(&scene);
+    }
     {
         let mut c = CACHE.lock().unwrap();
         if let Some(r) = rec {
@@ -126,6 +172,12 @@ fn sync_per_instance_states() {
                     }
                     let muted = call("GetInputMute", json!({"inputName": inputs["source"]}))?["inputMuted"].as_bool().unwrap_or(false);
                     rt.set_state(&iid, pick(muted, "muted", "unmuted"));
+                }
+                "source-volume" => {
+                    if s(&inputs, "source").is_empty() {
+                        return Ok(());
+                    }
+                    rt.set_state(&iid, input_volume_percent(s(&inputs, "source"))?);
                 }
                 "filter" => {
                     if s(&inputs, "source").is_empty() || s(&inputs, "filter").is_empty() {
@@ -192,6 +244,16 @@ fn on_event(name: &str, d: &Value) {
             for (iid, action, inputs) in instances() {
                 if action == "audio-mixer" && s(&inputs, "source") == s(d, "inputName") {
                     rt.set_state(&iid, pick(flag("inputMuted"), "muted", "unmuted"));
+                }
+            }
+        }
+        "CurrentProgramSceneChanged" => program_changed(s(d, "sceneName")),
+        "InputVolumeChanged" => {
+            let Some(rt) = RT.get() else { return };
+            let pct = percent_from_mul(d["inputVolumeMul"].as_f64().unwrap_or(0.0));
+            for (iid, action, inputs) in instances() {
+                if action == "source-volume" && s(&inputs, "source") == s(d, "inputName") {
+                    rt.set_state(&iid, pct);
                 }
             }
         }
@@ -504,6 +566,79 @@ fn main() {
         )
         // 18. Studio-mode transition
         .action(simple_button("scene-transition", "Scene Transition", "arrow-right", "TriggerStudioModeTransition"))
+        // 19. Previous scene (the key's label shows the scene it goes back to)
+        .action(Action::button("previous-scene", "Previous Scene").icon("undo-2").on_press(|ctx| {
+            require_obs(ctx)?;
+            let Some(prev) = PROGRAM.lock().unwrap().1.clone() else {
+                return ctx.fail("No previous scene yet — switch scenes once first");
+            };
+            call("SetCurrentProgramScene", json!({"sceneName": prev})).map(|_| ())
+        }))
+        // 20. Preview scene (Studio Mode)
+        .action(select_button("preview-scene", "Preview Scene", "monitor-play", "scene", "get-scenes", "No scene selected", "SetCurrentPreviewScene", "sceneName"))
+        // 21. Source volume (dial / slider), kept in sync with OBS's mixer
+        .action(
+            Action::slider("source-volume", "Source Volume", 0.0, 100.0)
+                .icon("volume-2")
+                .unit("%")
+                .inputs(vec![input::query_select("source", "Audio Source", "get-audio-inputs", &[]), input::text("step", "Step (%)").placeholder("5").default_value("5")])
+                .initial_with(|ic| {
+                    register(&ic.instance_id, "source-volume", &ic.inputs);
+                    let source = ic.input_str("source");
+                    Some(if connected() && !source.is_empty() { input_volume_percent(&source).unwrap_or(0.0) } else { 0.0 }.to_string())
+                })
+                .on_adjust(|ctx| {
+                    require_obs(ctx)?;
+                    let source = require_input(ctx, "source", "No audio source selected")?;
+                    register(&ctx.instance_id, "source-volume", &ctx.inputs);
+                    let target = match ctx.value {
+                        Some(v) => v,
+                        None => input_volume_percent(&source)? + parse_int(&ctx.input_str("step")).unwrap_or(5) as f64 * ctx.delta.unwrap_or(0.0),
+                    }
+                    .round()
+                    .clamp(0.0, 100.0);
+                    call("SetInputVolume", json!({"inputName": source, "inputVolumeMul": mul_from_percent(target)}))?;
+                    ctx.set_state(target);
+                    Ok(())
+                }),
+        )
+        // 22. Stats on the key (press opens nothing; it is a display)
+        .action(
+            Action::button("stats", "OBS Stats")
+                .icon("gauge")
+                .inputs(vec![input::select("stat", "Show", &[("cpu", "OBS CPU usage"), ("fps", "Frames per second"), ("dropped", "Dropped frames (output)"), ("skipped", "Skipped frames (render)")]).with("default", "cpu")])
+                .live(std::time::Duration::from_secs(2), |ic| {
+                    if !connected() {
+                        return Ok(Visual::new().label("OBS offline"));
+                    }
+                    let st = call("GetStats", json!({}))?;
+                    let n = |k: &str| st[k].as_f64().unwrap_or(0.0);
+                    let pct = |a: f64, b: f64| if b > 0.0 { a / b * 100.0 } else { 0.0 };
+                    Ok(Visual::new().label(match ic.input_str("stat").as_str() {
+                        "fps" => format!("{:.0} FPS", n("activeFps")),
+                        "dropped" => format!("Dropped {} ({:.1}%)", n("outputSkippedFrames"), pct(n("outputSkippedFrames"), n("outputTotalFrames"))),
+                        "skipped" => format!("Skipped {} ({:.1}%)", n("renderSkippedFrames"), pct(n("renderSkippedFrames"), n("renderTotalFrames"))),
+                        _ => format!("CPU {:.1}%", n("cpuUsage")),
+                    }))
+                }),
+        )
+        // 23. Browser source: refresh, optionally pointing it at a new URL first
+        .action(
+            Action::button("browser-source", "Browser Source")
+                .icon("globe")
+                .inputs(vec![input::query_select("source", "Browser Source", "get-browser-sources", &[]), input::text("url", "Set URL (optional)").placeholder("https://…")])
+                .on_press(|ctx| {
+                    require_obs(ctx)?;
+                    let source = require_input(ctx, "source", "No browser source selected")?;
+                    let url = ctx.input_str("url");
+                    if !url.trim().is_empty() {
+                        // Changing the URL reloads the page itself.
+                        return call("SetInputSettings", json!({"inputName": source, "inputSettings": {"url": url.trim()}})).map(|_| ());
+                    }
+                    call("PressInputPropertiesButton", json!({"inputName": source, "propertyName": "refreshnocache"})).map(|_| ())
+                }),
+        )
+        .query("get-browser-sources", query(|_| Ok(names(&call("GetInputList", json!({"inputKind": "browser_source"}))?, "inputs", "inputName"))))
         // Queries
         .query("get-scenes", query(|_| scenes()))
         .query("get-scene-collections", query(|_| Ok(name_list(&call("GetSceneCollectionList", json!({}))?, "sceneCollections"))))
