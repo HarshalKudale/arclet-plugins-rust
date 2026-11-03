@@ -358,6 +358,8 @@ reuses one client.
 | obs 1.1.0 (#2, #12): Previous Scene, Preview Scene, Source Volume dial, OBS Stats, Browser Source refresh/URL | done (tested against a scripted obs-websocket server, not a live OBS). Not done: source animation, instant-replay playback, second OBS on another PC |
 | win-tools 1.3.0 (#11): Wi-Fi / Bluetooth toggle, Power Plan key + wheel, Ping | done (radios read, not switched, in tests). Not done: Windows services (needs admin), Multi-Clip (clipboard history covers it) |
 | win-tools 1.4.0 (#20): Move App Window — a named app's window to any position/monitor, thirds, custom bounds | done. Not done: moving a window to another virtual desktop (no public API) |
+| SDK 0.4.0: `save_env`, `open_url`, `oauth` feature (PKCE loopback, device code, token refresh); `live` may push state | done, pushed |
+| elgato-lights 1.0.0 (#6): Power, Brightness, Temperature, Set Brightness/Temperature, Set Color, Battery; mDNS discovery | done (tested against mock lights; no real light here) |
 
 ## 8. Suggested order
 

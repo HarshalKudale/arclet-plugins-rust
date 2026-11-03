@@ -31,6 +31,16 @@
       "featured": true,
       "sort": 10
     },
+    "elgato-lights": {
+      "version": "1.0.0",
+      "name": "Elgato Lights",
+      "summary": "Key Light, Ring Light and Light Strip: power, brightness, temperature, color.",
+      "tags": [
+        "Lighting",
+        "Streaming"
+      ],
+      "sort": 25
+    },
     "intellij": {
       "version": "1.0.0",
       "name": "IntelliJ IDEA",
