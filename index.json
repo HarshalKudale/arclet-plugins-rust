@@ -84,9 +84,9 @@
       "sort": 20
     },
     "spotify": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Spotify",
-      "summary": "Play, skip, like, shuffle, repeat, volume and playlists.",
+      "summary": "Play, pause, skip and now playing for the Spotify desktop app.",
       "tags": [
         "Music",
         "Media"
