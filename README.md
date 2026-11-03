@@ -19,10 +19,23 @@ Every cross-platform plugin ships as two packages (`<id>-windows`, `<id>-macos`)
 | [win-tools](./win-tools) | Window management, per-app volume, clipboard history (`windows` crate) | Windows |
 | [mac-tools](./mac-tools) | Window management (Accessibility API), window switcher, Spaces/system shortcuts, stats, audio devices + mic mute, clipboard history | macOS |
 | [claude](./claude) | Running Claude Code sessions (status dots, window/tab switching), Remote Control, usage, recent sessions — read-only, no prompts | Windows, macOS |
+| [elgato-lights](./elgato-lights) | Key Light, Ring Light and Light Strip over their local HTTP API, found by mDNS | Windows, macOS |
+| [weather](./weather) | Current weather, 7-day and hourly forecast, air quality (Open-Meteo, no key) | Windows, macOS |
+| [clocks](./clocks) | Clock for any time zone, world clock wheel, countdown timer, stopwatch | Windows, macOS |
+| [streamlabs](./streamlabs) | Streamlabs Desktop over its local API (go live, record, replay, scenes, audio) | Windows, macOS |
+| [voicemod](./voicemod) | Voicemod Control API: voices, voice changer, hear myself, soundboard | Windows, macOS |
+| [spotify](./spotify) | Playback through the OS (SMTC / AppleScript); likes, shuffle, repeat, volume, playlists through the Web API | Windows, macOS |
+| [twitch](./twitch) | Helix API: chat, chat modes, ads, stream info, markers, clips, viewers, channel monitor | Windows, macOS |
+| [youtube](./youtube) | YouTube Data API: viewers, chat, ads, dashboard, go live / end stream | Windows, macOS |
 
 `vscode-companion` and `intellij-companion` are not ported: they are an editor extension and a
 Kotlin IDE plugin that run *inside* VS Code / IntelliJ, not KnobDeck SDK plugins. The Rust `vscode`
 and `intellij` plugins talk to the originals unchanged.
+
+Spotify, Twitch, Voicemod and YouTube take app credentials at build time from repository variables
+(`SPOTIFY_CLIENT_ID`, `TWITCH_CLIENT_ID`, `VOICEMOD_CLIENT_KEY`, `GOOGLE_CLIENT_ID`,
+`KNOBDECK_GOOGLE_TOKEN_URL`); without them the plugin's setup asks for the user's own. No client
+secret is built into any plugin.
 
 ## Build
 

@@ -47,7 +47,10 @@ Current decisions (keep this list up to date):
 
 | Plugin | Route | Keystrokes left, and why |
 |---|---|---|
-| discord, obs, vlc, zoom, vscode, intellij | the app's own API / pipe / websocket / HTTP | none |
+| discord, obs, vlc, zoom, vscode, intellij, streamlabs, voicemod, elgato-lights | the app's / device's own API / pipe / websocket / HTTP | none |
+| spotify | Windows SMTC and macOS AppleScript for playback; Spotify Web API for the rest | none |
+| twitch, youtube, weather | web APIs (Helix, YouTube Data, Open-Meteo) | none |
+| clocks | none needed (time and timers only) | none |
 | mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste), Screenshot app | Spaces ←/→ and Spotlight (no API; the user's configured system hotkey is posted), Force Quit ⌥⌘Esc (no API; reserved by loginwindow), ⌘V only for apps without a Paste menu item; Text Snippet types its text (text entry) |
 | win-tools | Win32 (windows, audio sessions and endpoints, `LockWorkStation`), undocumented `IPolicyConfig` for the default audio device (no public API; unchanged since Windows 7), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager | virtual desktops (no public API), Emoji Win+. (no API), Ctrl+V for clipboard history and Text Snippet paste mode (no app-independent paste call); Text Snippet types its text (text entry) |
 | browser-plugin | macOS Chromium (Chrome/Edge/Brave): AppleScript for tabs, navigation, windows, incognito, history/downloads/bookmarks pages; URLs via `open -a` / the browser exe | Firefox/Zen (no scripting interface), all browsers on Windows (no control interface without a debug flag), and page commands with no scripting equivalent (find, print, save, zoom, hard reload, reopen tab, full screen) |
