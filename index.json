@@ -83,6 +83,16 @@
       "featured": true,
       "sort": 20
     },
+    "streamlabs": {
+      "version": "1.0.0",
+      "name": "Streamlabs Desktop",
+      "summary": "Go live, record, replay buffer, scenes, sources and audio.",
+      "tags": [
+        "Streaming",
+        "Broadcast"
+      ],
+      "sort": 22
+    },
     "vlc": {
       "version": "1.0.0",
       "name": "VLC",

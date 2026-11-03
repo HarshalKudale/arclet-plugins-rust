@@ -1,0 +1,9 @@
+[package]
+name = "streamlabs"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk.workspace = true
+tungstenite.workspace = true

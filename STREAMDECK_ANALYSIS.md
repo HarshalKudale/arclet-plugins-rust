@@ -362,6 +362,7 @@ reuses one client.
 | elgato-lights 1.0.0 (#6): Power, Brightness, Temperature, Set Brightness/Temperature, Set Color, Battery; mDNS discovery | done (tested against mock lights; no real light here) |
 | weather 1.0.0 (#18): Weather, Forecast wheel, Hourly wheel, Air Quality — Open-Meteo, no key | done (tested against the live API) |
 | clocks 1.0.0 (#13 + Stream Deck's Timer): Clock (any zone), World Clock wheel, Countdown Timer, Stopwatch | done |
+| streamlabs 1.0.0 (#19, #31): Go Live, Record, Replay Buffer, Save Replay, Scene, Source Visibility, Mute, Volume | done (tested against a scripted API server built from Streamlabs' docs; not against the real app) |
 
 ## 8. Suggested order
 
