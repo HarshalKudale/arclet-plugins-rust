@@ -7,7 +7,7 @@
 //! secret in setup; they are kept only in this computer's plugin data folder.
 
 use knobdeck_sdk::oauth::OAuth;
-use knobdeck_sdk::{env_or, json, Error, Result, Value};
+use knobdeck_sdk::{env_or, Error, Result, Value};
 use std::time::Duration;
 
 pub const GOOGLE_TOKEN_URL: &str = "https://oauth2.googleapis.com/token";
@@ -83,24 +83,29 @@ pub fn active_broadcast() -> Result<Option<Value>> {
     Ok(get("/liveBroadcasts?part=id,snippet,status&broadcastStatus=active&broadcastType=all")?["items"].as_array().and_then(|a| a.first().cloned()))
 }
 
-/// The next scheduled broadcast (to go live with).
-pub fn upcoming_broadcast() -> Result<Option<Value>> {
-    Ok(get("/liveBroadcasts?part=id,snippet,status&broadcastStatus=upcoming&broadcastType=all")?["items"].as_array().and_then(|a| a.first().cloned()))
-}
-
-pub fn live() -> Result<Value> {
-    active_broadcast()?.ok_or_else(|| Error::msg("You are not live on YouTube"))
-}
-
-pub fn chat(text: &str) -> Result<()> {
-    let b = live()?;
-    let chat_id = b["snippet"]["liveChatId"].as_str().ok_or_else(|| Error::msg("Live chat is off for this stream"))?;
-    call("POST", "/liveChat/messages?part=snippet", Some(json!({"snippet": {"liveChatId": chat_id, "type": "textMessageEvent", "textMessageDetails": {"messageText": text}}}))).map(|_| ())
-}
+// Write access (youtube.force-ssl) is not requested for now, for privacy: the plugin signs in
+// read-only. These helpers serve the write actions commented out in main.rs; restore them together
+// with that scope in youtube-setup.rs.
+//
+// /// The next scheduled broadcast (to go live with).
+// pub fn upcoming_broadcast() -> Result<Option<Value>> {
+//     Ok(get("/liveBroadcasts?part=id,snippet,status&broadcastStatus=upcoming&broadcastType=all")?["items"].as_array().and_then(|a| a.first().cloned()))
+// }
+//
+// pub fn live() -> Result<Value> {
+//     active_broadcast()?.ok_or_else(|| Error::msg("You are not live on YouTube"))
+// }
+//
+// pub fn chat(text: &str) -> Result<()> {
+//     let b = live()?;
+//     let chat_id = b["snippet"]["liveChatId"].as_str().ok_or_else(|| Error::msg("Live chat is off for this stream"))?;
+//     call("POST", "/liveChat/messages?part=snippet", Some(json!({"snippet": {"liveChatId": chat_id, "type": "textMessageEvent", "textMessageDetails": {"messageText": text}}}))).map(|_| ())
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use knobdeck_sdk::json;
 
     #[test]
     fn errors_read_well() {

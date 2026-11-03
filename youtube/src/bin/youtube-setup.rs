@@ -7,8 +7,9 @@ mod yt;
 const AUTH_URL: &str = "https://accounts.google.com/o/oauth2/v2/auth";
 /// Desktop clients may use any loopback port.
 const REDIRECT_PORT: u16 = 47812;
-/// force-ssl is the scope Google requires for live chat and broadcast transitions.
-const SCOPE: &str = "https://www.googleapis.com/auth/youtube.force-ssl";
+/// Read-only for now (privacy): enough for viewers and the dashboard. The commented-out write
+/// actions (chat, ads, go live) need "https://www.googleapis.com/auth/youtube.force-ssl" instead.
+const SCOPE: &str = "https://www.googleapis.com/auth/youtube.readonly";
 
 fn main() {
     knobdeck_sdk::run_setup(|ctx| {

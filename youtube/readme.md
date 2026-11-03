@@ -5,15 +5,15 @@ YouTube live streaming controls in KnobDeck, on Windows and macOS.
 ## What it does
 
 - Viewers: concurrent viewers of your live stream (updated every minute), "Offline" otherwise.
-- Chat Message: post a preset message in your live chat.
-- Play Ad: insert an ad break (channels eligible for mid-roll ads).
 - Live Dashboard: opens YouTube Studio's live streaming page.
-- Go Live / End Stream: takes your next scheduled stream live, or ends the live one. YouTube needs
-  your encoder (OBS…) to be sending video before a stream can go live.
+
+The plugin signs in **read-only**: it can see your channel and live stream, never change them.
+Start and stop streams with the OBS plugin.
 
 ## Setup
 
-Setup opens Google's sign-in page; choose the account that owns your channel and allow KnobDeck.
+Setup opens Google's sign-in page; choose the account that owns your channel and allow KnobDeck
+to view your YouTube account.
 If you use your own Google Cloud app (type Desktop, YouTube Data API enabled), enter its client ID
 and secret in setup; they are kept only in KnobDeck's plugin data folder on this computer.
 

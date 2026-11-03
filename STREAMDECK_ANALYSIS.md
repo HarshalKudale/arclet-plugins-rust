@@ -367,7 +367,10 @@ reuses one client.
 | spotify 1.0.0 (#5, #8): Play/Pause, Next, Previous, Now Playing via the OS; Like, Shuffle, Repeat, Volume, Play Playlist, Playlists wheel, Add to Playlist via the Web API | done (Web API tested against a mock incl. token refresh; SMTC read path tested; Spotify not installed here; needs the SPOTIFY_CLIENT_ID repo variable). Not done: queue, saved search, sleep timer |
 | twitch 1.0.0 (#7, #17): Chat Message, Clear Chat, Emote/Follower/Sub-Only, Slow Mode, Run Ad, Stream Info, Marker, Create Clip, Viewer Count, Channel Monitor | done (tested against a mock Helix; device sign-in not run; needs the TWITCH_CLIENT_ID repo variable). Not done: Pager (EventSub), giveaways, bans, open latest clip |
 | youtube 1.0.0 (#9): Viewers, Chat Message, Play Ad, Live Dashboard, Go Live / End Stream | done (tested against a mock API; Google sign-in not run). Needs the GOOGLE_CLIENT_ID variable, a KnobDeck website token endpoint (KNOBDECK_GOOGLE_TOKEN_URL) that adds the secret, and Google's OAuth verification for youtube.force-ssl |
-| Deferred: Wave Link (#14, hardware-specific), host actions (Random Action, Soundboard), mac-tools twins of the win-tools device/radio/ping actions (need a Mac to build and test) | — |
+| spotify 1.0.1: Web API actions and setup commented out until KnobDeck's Spotify app (owner needs Premium) and SPOTIFY_CLIENT_ID exist; OS-route keys need no setup | done |
+| youtube 1.0.1: read-only sign-in (youtube.readonly); Chat Message, Play Ad, Go Live commented out (privacy; OBS starts streams) | done |
+| twitch 1.0.1: rebuilt with TWITCH_CLIENT_ID | done |
+| Deferred: Voicemod client key, Wave Link (#14, hardware-specific), host actions (Random Action, Soundboard), mac-tools twins of the win-tools device/radio/ping actions (need a Mac to build and test) | — |
 
 ## 8. Suggested order
 
