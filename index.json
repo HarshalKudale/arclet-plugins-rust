@@ -85,7 +85,7 @@
       "sort": 30
     },
     "win-tools": {
-      "version": "1.1.0",
+      "version": "1.1.1",
       "name": "Windows Tools",
       "summary": "Window management, per-app volume, clipboard history.",
       "tags": [
