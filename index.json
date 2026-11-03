@@ -105,7 +105,7 @@
       "sort": 22
     },
     "twitch": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Twitch",
       "summary": "Chat, chat modes, ads, stream info, markers, clips, viewers.",
       "tags": [
