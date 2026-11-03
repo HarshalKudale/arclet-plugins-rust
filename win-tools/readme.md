@@ -8,6 +8,9 @@ use [Mac Tools](../mac-tools).
 - Snap, move, center, resize, maximize, restore, and close windows.
 - Toggle always-on-top, borderless mode, transparency, and click-through behavior.
 - Control app-specific volume, mute, and monitor movement.
+- Audio devices: mute the microphone (toggle or push-to-talk), switch the default playback or
+  recording device (one key, an A/B toggle, or a wheel), and set any device's volume or mute.
+  The switch can set the default device, the communications device, or both.
 - Includes dynamic wheels for choosing target windows live.
 - Switch, create and close virtual desktops; Task View, Show Desktop, Lock PC, Screen Snip,
   File Explorer, Settings, Run, Emoji Panel and Task Manager shortcuts.
@@ -26,4 +29,6 @@ use [Mac Tools](../mac-tools).
 Task View, Show Desktop, Run, Screen Snip, Settings, File Explorer and Task Manager open through the
 Windows shell (`ShellExecute`) rather than shortcuts, so the focused app can't intercept them.
 Virtual desktop switching and the Emoji Panel still use their Win-key shortcuts: Windows has no
-public API for them.
+public API for them. Switching the default audio device uses `IPolicyConfig`, the undocumented
+interface the Sound control panel itself uses (Windows has no public API for it); volume and mute
+use the public `IAudioEndpointVolume`.

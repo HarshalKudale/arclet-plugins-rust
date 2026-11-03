@@ -85,9 +85,9 @@
       "sort": 30
     },
     "win-tools": {
-      "version": "1.1.2",
+      "version": "1.2.0",
       "name": "Windows Tools",
-      "summary": "Window management, per-app volume, clipboard history.",
+      "summary": "Window management, audio devices, per-app volume, clipboard history.",
       "tags": [
         "Windows",
         "Automation"

@@ -391,6 +391,116 @@ mod app {
                         Ok(())
                     }),
             )
+            // ── Audio devices ──
+            .query("get-audio-devices", |ctx| device_options(&ctx.inputs, true))
+            .query("get-audio-devices-fixed", |ctx| device_options(&ctx.inputs, false))
+            .action(
+                Action::toggle("toggle-mic-mute", "Mute Microphone")
+                    .icon("mic")
+                    .volatile()
+                    .state("unmuted", "Mic On", "mic")
+                    .state("muted", "Mic Muted", "mic-off")
+                    .initial_with(|_| Some(mute_state(audio::device_muted(true, DEFAULT_DEVICE).unwrap_or(false)).into()))
+                    .on_press(|ctx| {
+                        ctx.fan_out(mute_state(audio::toggle_device_mute(true, DEFAULT_DEVICE)?));
+                        Ok(())
+                    }),
+            )
+            .action(
+                Action::hold("push-to-talk", "Push to Talk")
+                    .icon("mic-off")
+                    .released("Mic Muted", "mic-off")
+                    .held("Talking", "mic")
+                    .on_hold_start(|_| audio::set_device_mute(true, DEFAULT_DEVICE, false))
+                    .on_hold_end(|_| audio::set_device_mute(true, DEFAULT_DEVICE, true)),
+            )
+            .action(device_wheel("output-device-wheel", "Output Device", "speaker", false))
+            .action(device_wheel("input-device-wheel", "Input Device", "mic", true))
+            .action(
+                Action::toggle("set-audio-device", "Set Audio Device")
+                    .icon("speaker")
+                    .volatile()
+                    .inputs(vec![flow_input(), input::query_select("device", "Device", "get-audio-devices-fixed", &["flow"]), roles_input()])
+                    .state("inactive", "Not Selected", "speaker")
+                    .state("active", "Selected", "circle-check")
+                    .initial_with(|ic| {
+                        let (input, id, roles) = (is_input(&ic.inputs), ic.input_str("device"), audio::Roles::parse(&ic.input_str("roles")));
+                        Some((if !id.is_empty() && audio::is_default(input, &id, roles) { "active" } else { "inactive" }).into())
+                    })
+                    .on_press(|ctx| {
+                        let id = ctx.input_str("device");
+                        if id.is_empty() {
+                            return ctx.fail("Choose a device first");
+                        }
+                        audio::set_default(&id, audio::Roles::parse(&ctx.input_str("roles")))?;
+                        ctx.set_state("active");
+                        Ok(())
+                    }),
+            )
+            .action(
+                Action::toggle("toggle-audio-device", "Toggle Audio Device")
+                    .icon("arrow-left-right")
+                    .volatile()
+                    .inputs(vec![
+                        flow_input(),
+                        input::query_select("device", "Device A", "get-audio-devices-fixed", &["flow"]),
+                        input::query_select("device_b", "Device B", "get-audio-devices-fixed", &["flow"]),
+                        roles_input(),
+                    ])
+                    .state("a", "Device A", "headphones")
+                    .state("b", "Device B", "speaker")
+                    .initial_with(|ic| {
+                        let roles = audio::Roles::parse(&ic.input_str("roles"));
+                        Some((if audio::is_default(is_input(&ic.inputs), &ic.input_str("device_b"), roles) { "b" } else { "a" }).into())
+                    })
+                    .on_press(|ctx| {
+                        let (a, b) = (ctx.input_str("device"), ctx.input_str("device_b"));
+                        if a.is_empty() || b.is_empty() {
+                            return ctx.fail("Choose both devices first");
+                        }
+                        let roles = audio::Roles::parse(&ctx.input_str("roles"));
+                        // From A (or anything else) go to B; from B go back to A.
+                        let to_b = !audio::is_default(is_input(&ctx.inputs), &b, roles);
+                        audio::set_default(if to_b { &b } else { &a }, roles)?;
+                        ctx.set_state(if to_b { "b" } else { "a" });
+                        Ok(())
+                    }),
+            )
+            .action(
+                Action::toggle("device-mute", "Mute Device")
+                    .icon("volume-x")
+                    .volatile()
+                    .inputs(vec![flow_input(), device_input()])
+                    .state("unmuted", "On", "volume-2")
+                    .state("muted", "Muted", "volume-x")
+                    .initial_with(|ic| Some(mute_state(audio::device_muted(is_input(&ic.inputs), &ic.input_str("device")).unwrap_or(false)).into()))
+                    .on_press(|ctx| {
+                        ctx.set_state(mute_state(audio::toggle_device_mute(is_input(&ctx.inputs), &ctx.input_str("device"))?));
+                        Ok(())
+                    }),
+            )
+            .action(
+                Action::slider("device-volume", "Device Volume", 0.0, 100.0)
+                    .icon("volume-2")
+                    .unit("%")
+                    .inputs(vec![flow_input(), device_input(), input::text("step", "Step (%)").placeholder("5").default_value("5")])
+                    .initial_with(|ic| Some(audio::device_volume(is_input(&ic.inputs), &ic.input_str("device")).unwrap_or(0).to_string()))
+                    .on_adjust(|ctx| {
+                        let (input, id) = (is_input(&ctx.inputs), ctx.input_str("device"));
+                        let result = match ctx.value {
+                            // Drag / dial commit: an absolute target.
+                            Some(v) => {
+                                let target = v.round().clamp(0.0, 100.0);
+                                audio::set_device_volume(input, &id, target)?;
+                                target as i64
+                            }
+                            // +/- stepper nudge.
+                            None => audio::adjust_device_volume(input, &id, input_int(&ctx.inputs, "step").unwrap_or(5) as f64 * ctx.delta.unwrap_or(0.0))?,
+                        };
+                        ctx.set_state(result);
+                        Ok(())
+                    }),
+            )
             // ── Switch Window (taskbar-style wheel) ──
             .action(
                 Action::wheel("switch-window-wheel", "Switch to Window")
@@ -559,6 +669,79 @@ mod app {
     }
 
     static CLIPBOARD_IDS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
+
+    /// The `device` value meaning "whatever Windows' default device is right now".
+    const DEFAULT_DEVICE: &str = "__default__";
+
+    fn mute_state(muted: bool) -> &'static str {
+        if muted {
+            "muted"
+        } else {
+            "unmuted"
+        }
+    }
+
+    fn is_input(inputs: &Value) -> bool {
+        inputs["flow"] == "input"
+    }
+
+    fn flow_input() -> Value {
+        input::select("flow", "Type", &[("output", "Playback (speakers, headphones)"), ("input", "Recording (microphones)")]).with("default", "output")
+    }
+
+    fn device_input() -> Value {
+        input::query_select("device", "Device", "get-audio-devices", &["flow"]).with("default", DEFAULT_DEVICE)
+    }
+
+    fn roles_input() -> Value {
+        input::select("roles", "Set as", &[("all", "Default and communications device"), ("default", "Default device only"), ("communications", "Communications device only")]).with("default", "all")
+    }
+
+    /// Options for a device select; `with_default` adds "the current default device" first.
+    fn device_options(inputs: &Value, with_default: bool) -> Result<Value> {
+        let mut opts = vec![];
+        if with_default {
+            opts.push(json!({"value": DEFAULT_DEVICE, "label": "Default device"}));
+        }
+        opts.extend(audio::devices(is_input(inputs))?.into_iter().map(|d| json!({"value": d.id, "label": d.name})));
+        Ok(Value::Array(opts))
+    }
+
+    static DEVICE_IDS: Mutex<Option<HashMap<String, String>>> = Mutex::new(None);
+
+    /// A wheel of the active devices; pressing one makes it the default (all roles), like mac-tools.
+    fn device_wheel(id: &'static str, label: &str, icon: &'static str, input: bool) -> Action {
+        Action::wheel(id, label)
+            .icon(icon)
+            .on_open(move |ctx| {
+                let list = audio::devices(input).or_else(|e| ctx.fail(e.message().to_string()))?;
+                if list.is_empty() {
+                    return ctx.fail(if input { "No microphones found" } else { "No playback devices found" });
+                }
+                let current = audio::default_device(input, audio::Roles::All.probe());
+                let mut map = DEVICE_IDS.lock().unwrap();
+                let map = map.get_or_insert_with(HashMap::new);
+                map.retain(|k, _| !k.starts_with(id));
+                Ok(list
+                    .into_iter()
+                    .take(16)
+                    .enumerate()
+                    .map(|(i, d)| {
+                        let child = format!("{id}-{i}");
+                        let icon = if current.as_deref() == Some(d.id.as_str()) { "circle-check" } else { icon };
+                        map.insert(child.clone(), d.id);
+                        json!({"id": child, "label": d.name, "icon": icon})
+                    })
+                    .collect())
+            })
+            .on_child_press(move |ctx| {
+                let dev = DEVICE_IDS.lock().unwrap().as_ref().and_then(|m| m.get(ctx.child_id.as_deref().unwrap_or("")).cloned());
+                match dev {
+                    Some(d) => audio::set_default(&d, audio::Roles::All),
+                    None => ctx.fail("That device is no longer available"),
+                }
+            })
+    }
 
     fn app_volume_step(id: &str, label: &str, sign: f64) -> Action {
         Action::button(id, label)

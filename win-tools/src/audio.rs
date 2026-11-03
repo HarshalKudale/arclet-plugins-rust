@@ -1,12 +1,21 @@
-//! Per-application volume via the Windows Core Audio Session API (WASAPI).
-//! Sessions are matched to "an app" by exe file name, not raw PID: multi-process
-//! apps (browsers, Discord…) spread audio over several processes sharing one exe
+//! Windows Core Audio (WASAPI).
+//!
+//! Per-application volume: sessions are matched to "an app" by exe file name, not raw PID:
+//! multi-process apps (browsers, Discord…) spread audio over several processes sharing one exe
 //! name, and grouping by name mirrors Windows' own Volume Mixer.
+//!
+//! Devices: list playback/recording devices, switch the default, and set a device's volume and mute.
 
 use crate::win32;
-use windows::core::Interface;
-use windows::Win32::Media::Audio::{eConsole, eRender, IAudioSessionControl2, IAudioSessionManager2, IMMDeviceEnumerator, ISimpleAudioVolume, MMDeviceEnumerator};
-use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
+use std::ffi::c_void;
+use windows::core::{Interface, IUnknown, GUID, HRESULT, PCWSTR, PWSTR};
+use windows::Win32::Devices::FunctionDiscovery::PKEY_Device_FriendlyName;
+use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
+use windows::Win32::Media::Audio::{
+    eCapture, eCommunications, eConsole, eMultimedia, eRender, EDataFlow, ERole, IAudioSessionControl2, IAudioSessionManager2, IMMDevice, IMMDeviceEnumerator, ISimpleAudioVolume, MMDeviceEnumerator, DEVICE_STATE_ACTIVE,
+};
+use windows::Win32::System::Com::StructuredStorage::PropVariantToStringAlloc;
+use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_MULTITHREADED, STGM_READ};
 
 type R<T> = knobdeck_sdk::Result<T>;
 
@@ -141,9 +150,207 @@ pub fn foreground_exe_name() -> R<Option<String>> {
     Ok(win32::process_exe_name(win32::window_process_id(hwnd)))
 }
 
+// ── Audio devices (endpoints) ────────────────────────────────────────────────
+
+/// An active playback (`input = false`) or recording (`input = true`) device.
+#[derive(Clone, Debug)]
+pub struct Device {
+    pub id: String,
+    pub name: String,
+}
+
+fn flow(input: bool) -> EDataFlow {
+    if input {
+        eCapture
+    } else {
+        eRender
+    }
+}
+
+fn enumerator() -> R<IMMDeviceEnumerator> {
+    ensure_com();
+    unsafe { CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL) }.map_err(|e| werr("CoCreateInstance(MMDeviceEnumerator)", e))
+}
+
+/// Read a COM-allocated wide string and free it.
+fn take_pwstr(p: PWSTR) -> String {
+    let s = unsafe { p.to_string() }.unwrap_or_default();
+    unsafe { CoTaskMemFree(Some(p.0 as *const _)) };
+    s
+}
+
+fn device_id(d: &IMMDevice) -> Option<String> {
+    unsafe { d.GetId() }.ok().map(take_pwstr)
+}
+
+fn friendly_name(d: &IMMDevice) -> Option<String> {
+    let store = unsafe { d.OpenPropertyStore(STGM_READ) }.ok()?;
+    let value = unsafe { store.GetValue(&PKEY_Device_FriendlyName) }.ok()?;
+    unsafe { PropVariantToStringAlloc(&value) }.ok().map(take_pwstr)
+}
+
+/// Active devices for one direction, in Windows' order.
+pub fn devices(input: bool) -> R<Vec<Device>> {
+    let list = unsafe { enumerator()?.EnumAudioEndpoints(flow(input), DEVICE_STATE_ACTIVE) }.map_err(|e| werr("EnumAudioEndpoints", e))?;
+    let count = unsafe { list.GetCount() }.map_err(|e| werr("IMMDeviceCollection::GetCount", e))?;
+    Ok((0..count)
+        .filter_map(|i| unsafe { list.Item(i) }.ok())
+        .filter_map(|d| {
+            let id = device_id(&d)?;
+            let name = friendly_name(&d).unwrap_or_else(|| id.clone());
+            Some(Device { id, name })
+        })
+        .collect())
+}
+
+/// Id of the default device for `role` (`None` when there is no device at all).
+pub fn default_device(input: bool, role: ERole) -> Option<String> {
+    device_id(&unsafe { enumerator().ok()?.GetDefaultAudioEndpoint(flow(input), role) }.ok()?)
+}
+
+/// Whether `id` is the current default for the roles a switch would set.
+pub fn is_default(input: bool, id: &str, roles: Roles) -> bool {
+    default_device(input, roles.probe()).is_some_and(|d| d == id)
+}
+
+/// Which Windows default the switch sets: everything, or only one of "Default device" / "Default communication device".
+#[derive(Clone, Copy, PartialEq)]
+pub enum Roles {
+    All,
+    Default,
+    Communications,
+}
+
+impl Roles {
+    pub fn parse(s: &str) -> Self {
+        match s {
+            "default" => Roles::Default,
+            "communications" => Roles::Communications,
+            _ => Roles::All,
+        }
+    }
+    fn list(self) -> &'static [ERole] {
+        match self {
+            Roles::All => &[eConsole, eMultimedia, eCommunications],
+            Roles::Default => &[eConsole, eMultimedia],
+            Roles::Communications => &[eCommunications],
+        }
+    }
+    /// The role whose current default decides whether a device "is selected".
+    pub fn probe(self) -> ERole {
+        if self == Roles::Communications {
+            eCommunications
+        } else {
+            eConsole
+        }
+    }
+}
+
+// Windows has no public API to change the default device. Every switcher (Sound control panel,
+// SoundSwitch, AudioDeviceCmdlets, EarTrumpet) uses the undocumented IPolicyConfig, unchanged
+// since Windows 7. Only SetDefaultEndpoint is called, so its slot is all we declare.
+const CLSID_POLICY_CONFIG: GUID = GUID::from_u128(0x870af99c_171d_4f9e_af0d_e63df40c2bc9);
+const IID_POLICY_CONFIG: GUID = GUID::from_u128(0xf8679f50_850a_41cf_9c72_430f290290c8);
+/// IUnknown (3) + GetMixFormat … SetPropertyValue (10) come before SetDefaultEndpoint.
+const SET_DEFAULT_ENDPOINT_SLOT: usize = 13;
+type SetDefaultEndpointFn = unsafe extern "system" fn(this: *mut c_void, id: PCWSTR, role: ERole) -> HRESULT;
+
+pub fn set_default(id: &str, roles: Roles) -> R<()> {
+    ensure_com();
+    let unknown: IUnknown = unsafe { CoCreateInstance(&CLSID_POLICY_CONFIG, None, CLSCTX_ALL) }.map_err(|e| werr("CoCreateInstance(PolicyConfig)", e))?;
+    let mut raw = std::ptr::null_mut();
+    unsafe { unknown.query(&IID_POLICY_CONFIG, &mut raw) }.ok().map_err(|e| werr("QueryInterface(IPolicyConfig)", e))?;
+    // Owns the reference returned by QueryInterface, so it is released on drop.
+    let policy = unsafe { IUnknown::from_raw(raw) };
+    let wide: Vec<u16> = id.encode_utf16().chain(std::iter::once(0)).collect();
+    unsafe {
+        let vtable = *(policy.as_raw() as *const *const usize);
+        let set: SetDefaultEndpointFn = std::mem::transmute(*vtable.add(SET_DEFAULT_ENDPOINT_SLOT));
+        for &role in roles.list() {
+            set(policy.as_raw(), PCWSTR(wide.as_ptr()), role).ok().map_err(|e| werr("IPolicyConfig::SetDefaultEndpoint", e))?;
+        }
+    }
+    Ok(())
+}
+
+/// The device's volume control. `id` empty or `"__default__"` means the current default device.
+fn endpoint(input: bool, id: &str) -> R<IAudioEndpointVolume> {
+    let en = enumerator()?;
+    let device = if id.is_empty() || id == "__default__" {
+        unsafe { en.GetDefaultAudioEndpoint(flow(input), eConsole) }.map_err(|_| knobdeck_sdk::Error::msg(if input { "No microphone is connected" } else { "No playback device is connected" }))?
+    } else {
+        let wide: Vec<u16> = id.encode_utf16().chain(std::iter::once(0)).collect();
+        unsafe { en.GetDevice(PCWSTR(wide.as_ptr())) }.map_err(|_| knobdeck_sdk::Error::msg("That audio device is not connected"))?
+    };
+    unsafe { device.Activate(CLSCTX_ALL, None) }.map_err(|e| werr("IMMDevice::Activate(IAudioEndpointVolume)", e))
+}
+
+/// Volume 0–100 (rounded).
+pub fn device_volume(input: bool, id: &str) -> R<i64> {
+    let v = unsafe { endpoint(input, id)?.GetMasterVolumeLevelScalar() }.map_err(|e| werr("GetMasterVolumeLevelScalar", e))?;
+    Ok((v * 100.0).round() as i64)
+}
+
+pub fn set_device_volume(input: bool, id: &str, percent: f64) -> R<()> {
+    let level = (percent.clamp(0.0, 100.0) / 100.0) as f32;
+    unsafe { endpoint(input, id)?.SetMasterVolumeLevelScalar(level, std::ptr::null()) }.map_err(|e| werr("SetMasterVolumeLevelScalar", e))
+}
+
+/// Nudge by `delta_percent`; returns the new volume.
+pub fn adjust_device_volume(input: bool, id: &str, delta_percent: f64) -> R<i64> {
+    let target = (device_volume(input, id)? as f64 + delta_percent).clamp(0.0, 100.0);
+    set_device_volume(input, id, target)?;
+    Ok(target.round() as i64)
+}
+
+pub fn device_muted(input: bool, id: &str) -> R<bool> {
+    Ok(unsafe { endpoint(input, id)?.GetMute() }.map_err(|e| werr("IAudioEndpointVolume::GetMute", e))?.as_bool())
+}
+
+pub fn set_device_mute(input: bool, id: &str, muted: bool) -> R<()> {
+    unsafe { endpoint(input, id)?.SetMute(muted, std::ptr::null()) }.map_err(|e| werr("IAudioEndpointVolume::SetMute", e))
+}
+
+/// Flip mute; returns the new state.
+pub fn toggle_device_mute(input: bool, id: &str) -> R<bool> {
+    let target = !device_muted(input, id)?;
+    set_device_mute(input, id, target)?;
+    Ok(target)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Read-only: lists devices and reads the defaults' volume and mute without changing them.
+    #[test]
+    fn endpoints_list_and_read() {
+        for input in [false, true] {
+            let list = devices(input).expect("EnumAudioEndpoints");
+            eprintln!("input={input}: {:?}", list.iter().map(|d| &d.name).collect::<Vec<_>>());
+            let Some(def) = default_device(input, eConsole) else { continue };
+            assert!(list.iter().any(|d| d.id == def), "default device is listed");
+            let v = device_volume(input, &def).expect("volume of default");
+            assert!((0..=100).contains(&v));
+            assert_eq!(device_volume(input, "__default__").unwrap(), v);
+            device_muted(input, &def).expect("mute of default");
+        }
+        assert!(device_volume(false, "{not-a-device}").is_err());
+    }
+
+    /// Switching the default needs a second device and changes the user's setup, so it is opt-in.
+    /// It switches to another device and back.
+    #[test]
+    #[ignore]
+    fn switch_default_and_back() {
+        let list = devices(false).unwrap();
+        let original = default_device(false, eConsole).unwrap();
+        let other = list.iter().find(|d| d.id != original).expect("needs two playback devices");
+        set_default(&other.id, Roles::Default).unwrap();
+        assert_eq!(default_device(false, eConsole).as_deref(), Some(other.id.as_str()));
+        set_default(&original, Roles::Default).unwrap();
+        assert_eq!(default_device(false, eConsole).as_deref(), Some(original.as_str()));
+    }
 
     #[test]
     fn session_enumeration_does_not_error() {
