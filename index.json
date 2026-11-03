@@ -167,6 +167,16 @@
       "featured": true,
       "sort": 40
     },
+    "youtube": {
+      "version": "1.0.0",
+      "name": "YouTube",
+      "summary": "Live viewers, chat messages, ads, dashboard, go live and end stream.",
+      "tags": [
+        "Streaming",
+        "Broadcast"
+      ],
+      "sort": 23
+    },
     "zoom": {
       "version": "1.0.1",
       "name": "Zoom",

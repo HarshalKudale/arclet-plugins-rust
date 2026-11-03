@@ -1,0 +1,9 @@
+[package]
+name = "youtube"
+version = "1.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+knobdeck-sdk = { workspace = true, features = ["oauth"] }
+ureq.workspace = true

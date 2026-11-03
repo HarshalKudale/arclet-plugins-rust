@@ -59,6 +59,9 @@ jobs:
         env:
           VOICEMOD_CLIENT_KEY: ${{ vars.VOICEMOD_CLIENT_KEY }}
           SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+          # No Google secret here: the website's token endpoint adds it server-side (like Discord's).
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          KNOBDECK_GOOGLE_TOKEN_URL: ${{ vars.KNOBDECK_GOOGLE_TOKEN_URL }}
           TWITCH_CLIENT_ID: ${{ vars.TWITCH_CLIENT_ID }}
         run: |
           for d in ${{ matrix.plugins }}; do
