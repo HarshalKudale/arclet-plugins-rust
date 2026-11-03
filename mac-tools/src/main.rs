@@ -421,18 +421,18 @@ mod app {
             .query("get-window-w", |_| Ok(json!(ax::focused_window()?.frame()?.w.round().to_string())))
             .query("get-window-h", |_| Ok(json!(ax::focused_window()?.frame()?.h.round().to_string())))
             // ── Current Window ──
-            .action(window_button("minimize", "Minimize", "minimize.svg", minimize))
-            .action(window_button("maximize", "Fill Screen", "maximize.svg", fill))
-            .action(window_button("restore", "Restore", "restore.svg", restore))
-            .action(window_button("close-window", "Close Window", "close.svg", |w| w.close()))
-            .action(window_button("bring-to-front", "Bring to Front", "front.svg", |w| w.bring_to_front()))
+            .action(window_button("minimize", "Minimize", "minus", minimize))
+            .action(window_button("maximize", "Fill Screen", "square", fill))
+            .action(window_button("restore", "Restore", "copy", restore))
+            .action(window_button("close-window", "Close Window", "x", |w| w.close()))
+            .action(window_button("bring-to-front", "Bring to Front", "bring-to-front", |w| w.bring_to_front()))
             .action(window_button("hide-app", "Hide App", "eye-off", hide_app))
-            .action(window_toggle("toggle-max-restore", "Fill / Restore", "maxrestore.svg", [("normal", "Windowed", "minimize-2"), ("maximized", "Filled", "maximize-2")], is_filled, toggle_fill))
-            .action(window_toggle("toggle-fullscreen", "Full Screen", "fullscreen.svg", [("windowed", "Windowed", "minimize-2"), ("fullscreen", "Full Screen", "maximize")], Elem::is_fullscreen, toggle_fullscreen))
+            .action(window_toggle("toggle-max-restore", "Fill / Restore", "maximize-2", [("normal", "Windowed", "minimize-2"), ("maximized", "Filled", "maximize-2")], is_filled, toggle_fill))
+            .action(window_toggle("toggle-fullscreen", "Full Screen", "fullscreen", [("windowed", "Windowed", "minimize-2"), ("fullscreen", "Full Screen", "maximize")], Elem::is_fullscreen, toggle_fullscreen))
             // ── Switch Window ──
             .action(
                 Action::wheel("switch-window-wheel", "Switch to Window")
-                    .icon("switch-app.svg")
+                    .icon("layout-grid")
                     .on_open(|ctx| window_slices("switch-window-wheel").or_else(|e| ctx.fail(e.message().to_string())))
                     .on_child_press(|ctx| match picked_window("switch-window-wheel", ctx) {
                         Some(w) => w.bring_to_front(),
@@ -443,45 +443,45 @@ mod app {
                     }),
             )
             // ── Position ──
-            .action(window_button("move-next-monitor", "Move to Next Display", "monitor.svg", move_to_next_display))
+            .action(window_button("move-next-monitor", "Move to Next Display", "monitor-up", move_to_next_display))
             .action(center_button("center-window", "Center Window"))
-            .action(snap_button("move-left-half", "Move Left Half", "snap-left.svg", reg(0.0, 0.0, 0.5, 1.0)))
-            .action(snap_button("move-right-half", "Move Right Half", "snap-right.svg", reg(0.5, 0.0, 0.5, 1.0)))
-            .action(snap_button("move-top-half", "Move Top Half", "snap-top.svg", reg(0.0, 0.0, 1.0, 0.5)))
-            .action(snap_button("move-bottom-half", "Move Bottom Half", "snap-bottom.svg", reg(0.0, 0.5, 1.0, 0.5)))
-            .action(snap_button("move-top-left", "Move Top Left", "snap-topleft.svg", reg(0.0, 0.0, 0.5, 0.5)))
-            .action(snap_button("move-top-right", "Move Top Right", "snap-topright.svg", reg(0.5, 0.0, 0.5, 0.5)))
-            .action(snap_button("move-bottom-left", "Move Bottom Left", "snap-bottomleft.svg", reg(0.0, 0.5, 0.5, 0.5)))
-            .action(snap_button("move-bottom-right", "Move Bottom Right", "snap-bottomright.svg", reg(0.5, 0.5, 0.5, 0.5)))
-            .action(snap_button("move-left-third", "Move Left Third", "snap-left.svg", reg(0.0, 0.0, 1.0 / 3.0, 1.0)))
-            .action(snap_button("move-center-third", "Move Center Third", "center.svg", reg(1.0 / 3.0, 0.0, 1.0 / 3.0, 1.0)))
-            .action(snap_button("move-right-third", "Move Right Third", "snap-right.svg", reg(2.0 / 3.0, 0.0, 1.0 / 3.0, 1.0)))
-            .action(snap_button("fill-display", "Fill Display", "fullscreen.svg", reg(0.0, 0.0, 1.0, 1.0)))
-            .action(Action::button("custom-position", "Custom Position").icon("move.svg").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(&ax::focused_window()?, &ctx.inputs)));
+            .action(snap_button("move-left-half", "Move Left Half", "panel-left", reg(0.0, 0.0, 0.5, 1.0)))
+            .action(snap_button("move-right-half", "Move Right Half", "panel-right", reg(0.5, 0.0, 0.5, 1.0)))
+            .action(snap_button("move-top-half", "Move Top Half", "panel-top", reg(0.0, 0.0, 1.0, 0.5)))
+            .action(snap_button("move-bottom-half", "Move Bottom Half", "panel-bottom", reg(0.0, 0.5, 1.0, 0.5)))
+            .action(snap_button("move-top-left", "Move Top Left", "move-up-left", reg(0.0, 0.0, 0.5, 0.5)))
+            .action(snap_button("move-top-right", "Move Top Right", "move-up-right", reg(0.5, 0.0, 0.5, 0.5)))
+            .action(snap_button("move-bottom-left", "Move Bottom Left", "move-down-left", reg(0.0, 0.5, 0.5, 0.5)))
+            .action(snap_button("move-bottom-right", "Move Bottom Right", "move-down-right", reg(0.5, 0.5, 0.5, 0.5)))
+            .action(snap_button("move-left-third", "Move Left Third", "panel-left", reg(0.0, 0.0, 1.0 / 3.0, 1.0)))
+            .action(snap_button("move-center-third", "Move Center Third", "focus", reg(1.0 / 3.0, 0.0, 1.0 / 3.0, 1.0)))
+            .action(snap_button("move-right-third", "Move Right Third", "panel-right", reg(2.0 / 3.0, 0.0, 1.0 / 3.0, 1.0)))
+            .action(snap_button("fill-display", "Fill Display", "fullscreen", reg(0.0, 0.0, 1.0, 1.0)))
+            .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(&ax::focused_window()?, &ctx.inputs)));
 
         // ── Dynamic Window Actions: window-picker wheels ──
         p = p
-            .action(picker_wheel("dynamic-minimize-wheel", "Dynamic Minimize", "minimize.svg", vec![], |_, w| minimize(w)))
-            .action(picker_wheel("dynamic-maximize-wheel", "Dynamic Fill Screen", "maximize.svg", vec![], |_, w| fill(w)))
-            .action(picker_wheel("dynamic-restore-wheel", "Dynamic Restore", "restore.svg", vec![], |_, w| restore(w)))
-            .action(picker_wheel("dynamic-close-wheel", "Dynamic Close", "close.svg", vec![], |_, w| w.close()))
-            .action(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Full Screen", "fullscreen.svg", vec![], |_, w| toggle_fullscreen(w).map(|_| ())))
-            .action(picker_wheel("dynamic-max-restore-wheel", "Dynamic Fill / Restore", "maxrestore.svg", vec![], |_, w| toggle_fill(w).map(|_| ())))
+            .action(picker_wheel("dynamic-minimize-wheel", "Dynamic Minimize", "minus", vec![], |_, w| minimize(w)))
+            .action(picker_wheel("dynamic-maximize-wheel", "Dynamic Fill Screen", "square", vec![], |_, w| fill(w)))
+            .action(picker_wheel("dynamic-restore-wheel", "Dynamic Restore", "copy", vec![], |_, w| restore(w)))
+            .action(picker_wheel("dynamic-close-wheel", "Dynamic Close", "x", vec![], |_, w| w.close()))
+            .action(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Full Screen", "fullscreen", vec![], |_, w| toggle_fullscreen(w).map(|_| ())))
+            .action(picker_wheel("dynamic-max-restore-wheel", "Dynamic Fill / Restore", "maximize-2", vec![], |_, w| toggle_fill(w).map(|_| ())))
             .action(picker_wheel("dynamic-hide-app-wheel", "Dynamic Hide App", "eye-off", vec![], |_, w| hide_app(w)))
-            .action(picker_wheel("dynamic-move-next-monitor-wheel", "Dynamic Move to Next Display", "monitor.svg", vec![], |_, w| move_to_next_display(w)))
-            .action(picker_wheel("dynamic-center-window-wheel", "Dynamic Center Window", "center.svg", vec![monitor_input()], |ctx, w| {
+            .action(picker_wheel("dynamic-move-next-monitor-wheel", "Dynamic Move to Next Display", "monitor-up", vec![], |_, w| move_to_next_display(w)))
+            .action(picker_wheel("dynamic-center-window-wheel", "Dynamic Center Window", "focus", vec![monitor_input()], |ctx, w| {
                 center_in(w, resolve_display(&w.frame()?, &str_input(&ctx.inputs, "monitor"))?.work)
             }))
-            .action(snap_picker("dynamic-move-left-half-wheel", "Dynamic Move Left Half", "snap-left.svg", reg(0.0, 0.0, 0.5, 1.0)))
-            .action(snap_picker("dynamic-move-right-half-wheel", "Dynamic Move Right Half", "snap-right.svg", reg(0.5, 0.0, 0.5, 1.0)))
-            .action(snap_picker("dynamic-move-top-half-wheel", "Dynamic Move Top Half", "snap-top.svg", reg(0.0, 0.0, 1.0, 0.5)))
-            .action(snap_picker("dynamic-move-bottom-half-wheel", "Dynamic Move Bottom Half", "snap-bottom.svg", reg(0.0, 0.5, 1.0, 0.5)))
-            .action(snap_picker("dynamic-move-top-left-wheel", "Dynamic Move Top Left", "snap-topleft.svg", reg(0.0, 0.0, 0.5, 0.5)))
-            .action(snap_picker("dynamic-move-top-right-wheel", "Dynamic Move Top Right", "snap-topright.svg", reg(0.5, 0.0, 0.5, 0.5)))
-            .action(snap_picker("dynamic-move-bottom-left-wheel", "Dynamic Move Bottom Left", "snap-bottomleft.svg", reg(0.0, 0.5, 0.5, 0.5)))
-            .action(snap_picker("dynamic-move-bottom-right-wheel", "Dynamic Move Bottom Right", "snap-bottomright.svg", reg(0.5, 0.5, 0.5, 0.5)))
-            .action(snap_picker("dynamic-fill-display-wheel", "Dynamic Fill Display", "fullscreen.svg", reg(0.0, 0.0, 1.0, 1.0)))
-            .action(picker_wheel("dynamic-custom-position-wheel", "Dynamic Custom Position", "move.svg", custom_position_inputs(), |ctx, w| apply_custom_position(w, &ctx.inputs)));
+            .action(snap_picker("dynamic-move-left-half-wheel", "Dynamic Move Left Half", "panel-left", reg(0.0, 0.0, 0.5, 1.0)))
+            .action(snap_picker("dynamic-move-right-half-wheel", "Dynamic Move Right Half", "panel-right", reg(0.5, 0.0, 0.5, 1.0)))
+            .action(snap_picker("dynamic-move-top-half-wheel", "Dynamic Move Top Half", "panel-top", reg(0.0, 0.0, 1.0, 0.5)))
+            .action(snap_picker("dynamic-move-bottom-half-wheel", "Dynamic Move Bottom Half", "panel-bottom", reg(0.0, 0.5, 1.0, 0.5)))
+            .action(snap_picker("dynamic-move-top-left-wheel", "Dynamic Move Top Left", "move-up-left", reg(0.0, 0.0, 0.5, 0.5)))
+            .action(snap_picker("dynamic-move-top-right-wheel", "Dynamic Move Top Right", "move-up-right", reg(0.5, 0.0, 0.5, 0.5)))
+            .action(snap_picker("dynamic-move-bottom-left-wheel", "Dynamic Move Bottom Left", "move-down-left", reg(0.0, 0.5, 0.5, 0.5)))
+            .action(snap_picker("dynamic-move-bottom-right-wheel", "Dynamic Move Bottom Right", "move-down-right", reg(0.5, 0.5, 0.5, 0.5)))
+            .action(snap_picker("dynamic-fill-display-wheel", "Dynamic Fill Display", "fullscreen", reg(0.0, 0.0, 1.0, 1.0)))
+            .action(picker_wheel("dynamic-custom-position-wheel", "Dynamic Custom Position", "move", custom_position_inputs(), |ctx, w| apply_custom_position(w, &ctx.inputs)));
 
         // ── Spaces & System (macOS shortcuts and apps) ──
         p = p
@@ -553,7 +553,7 @@ mod app {
         // ── Clipboard History ──
         p.action(
             Action::wheel("clipboard-history-wheel", "Clipboard History")
-                .icon("clipboard.svg")
+                .icon("clipboard-list")
                 .on_open(|ctx| {
                     clipboard::start();
                     let items = clipboard::list();
@@ -592,7 +592,7 @@ mod app {
     }
 
     fn center_button(id: &str, label: &str) -> Action {
-        Action::button(id, label).icon("center.svg").inputs(vec![monitor_input()]).on_press(|ctx| {
+        Action::button(id, label).icon("focus").inputs(vec![monitor_input()]).on_press(|ctx| {
             let w = ax::focused_window()?;
             center_in(&w, resolve_display(&w.frame()?, &str_input(&ctx.inputs, "monitor"))?.work)
         })

@@ -304,10 +304,10 @@ fn main() {
             Ok(())
         })
         // 1–2. Record, pause
-        .action(global_toggle("record", "Record", "record.svg", [("stopped", "Record Off", "square"), ("recording", "Recording", "circle-dot")], "StartRecord", "StopRecord", |c| c.recording))
+        .action(global_toggle("record", "Record", "circle", [("stopped", "Record Off", "square"), ("recording", "Recording", "circle-dot")], "StartRecord", "StopRecord", |c| c.recording))
         .action(
             Action::toggle("record-pause", "Record Pause")
-                .icon("record-pause.svg")
+                .icon("circle-pause")
                 .state("recording", "Recording", "play")
                 .state("paused", "Paused", "pause")
                 .initial_with(|_| Some(pick(CACHE.lock().unwrap().record_paused, "paused", "recording").into()))
@@ -320,7 +320,7 @@ fn main() {
         // 3. Chapter marker
         .action(
             Action::button("chapter-marker", "Chapter Marker")
-                .icon("chapter.svg")
+                .icon("bookmark-plus")
                 .inputs(vec![input::text("chapterName", "Chapter Name").placeholder("Chapter 1")])
                 .on_press(|ctx| {
                     require_obs(ctx)?;
@@ -328,18 +328,18 @@ fn main() {
                 }),
         )
         // 4–6. Stream, virtual cam, replay buffer
-        .action(global_toggle("stream", "Stream", "stream.svg", [("stopped", "Offline", "circle"), ("streaming", "Live", "circle-dot")], "StartStream", "StopStream", |c| c.streaming))
-        .action(global_toggle("virtual-cam", "Virtual Camera", "virtual-cam.svg", [("off", "Virtual Cam Off", "circle"), ("on", "Virtual Cam On", "circle-dot")], "StartVirtualCam", "StopVirtualCam", |c| c.vcam))
-        .action(global_toggle("replay-buffer", "Replay Buffer", "replay-buffer.svg", [("stopped", "Buffer Off", "circle"), ("active", "Buffer On", "circle-dot")], "StartReplayBuffer", "StopReplayBuffer", |c| c.replay_buffer))
-        .action(simple_button("replay-buffer-save", "Save Replay", "replay-save.svg", "SaveReplayBuffer"))
+        .action(global_toggle("stream", "Stream", "radio-tower", [("stopped", "Offline", "circle"), ("streaming", "Live", "circle-dot")], "StartStream", "StopStream", |c| c.streaming))
+        .action(global_toggle("virtual-cam", "Virtual Camera", "webcam", [("off", "Virtual Cam Off", "circle"), ("on", "Virtual Cam On", "circle-dot")], "StartVirtualCam", "StopVirtualCam", |c| c.vcam))
+        .action(global_toggle("replay-buffer", "Replay Buffer", "history", [("stopped", "Buffer Off", "circle"), ("active", "Buffer On", "circle-dot")], "StartReplayBuffer", "StopReplayBuffer", |c| c.replay_buffer))
+        .action(simple_button("replay-buffer-save", "Save Replay", "save", "SaveReplayBuffer"))
         // 8–10. Collection, profile, scene
-        .action(select_button("scene-collection", "Scene Collection", "scene-collection.svg", "collection", "get-scene-collections", "No scene collection selected", "SetCurrentSceneCollection", "sceneCollectionName"))
-        .action(select_button("profile", "Profile", "profile.svg", "profile", "get-profiles", "No profile selected", "SetCurrentProfile", "profileName"))
-        .action(select_button("scene", "Scene", "scene.svg", "scene", "get-scenes", "No scene selected", "SetCurrentProgramScene", "sceneName"))
+        .action(select_button("scene-collection", "Scene Collection", "layers", "collection", "get-scene-collections", "No scene collection selected", "SetCurrentSceneCollection", "sceneCollectionName"))
+        .action(select_button("profile", "Profile", "user-round", "profile", "get-profiles", "No profile selected", "SetCurrentProfile", "profileName"))
+        .action(select_button("scene", "Scene", "layout-grid", "scene", "get-scenes", "No scene selected", "SetCurrentProgramScene", "sceneName"))
         // 11. Source visibility
         .action(
             Action::toggle("source-visibility", "Source Visibility")
-                .icon("source-visibility.svg")
+                .icon("eye")
                 .inputs(vec![
                     input::query_select("scene", "Scene", "get-scenes", &[]),
                     input::query_select("source", "Source", "get-scene-items", &["scene"]).with("showIf", json!({"key": "scene", "truthy": true})),
@@ -367,7 +367,7 @@ fn main() {
         // 12. Audio mixer
         .action(
             Action::toggle("audio-mixer", "Audio Mixer")
-                .icon("audio-mixer.svg")
+                .icon("sliders-vertical")
                 .inputs(vec![input::query_select("source", "Audio Source", "get-audio-inputs", &[])])
                 .state("unmuted", "Unmuted", "volume-2")
                 .state("muted", "Muted", "volume-x")
@@ -388,7 +388,7 @@ fn main() {
         // 13. Media source control
         .action(
             Action::button("media-source-control", "Media Source Control")
-                .icon("media-control.svg")
+                .icon("circle-play")
                 .inputs(vec![
                     input::query_select("source", "Media Source", "get-media-sources", &[]),
                     input::select(
@@ -414,7 +414,7 @@ fn main() {
         // 14. Studio mode
         .action(
             Action::toggle("studio-mode", "Studio Mode")
-                .icon("studio-mode.svg")
+                .icon("square-split-horizontal")
                 .state("off", "Studio Off", "circle")
                 .state("on", "Studio On", "circle-dot")
                 .initial_with(|_| Some(pick(CACHE.lock().unwrap().studio_mode, "on", "off").into()))
@@ -429,7 +429,7 @@ fn main() {
         // 15. Transition
         .action(
             Action::button("transition", "Transition")
-                .icon("transition.svg")
+                .icon("arrow-left-right")
                 .inputs(vec![
                     input::query_select("transition", "Transition", "get-transitions", &[]),
                     input::text("duration", "Duration (ms)").placeholder("300"),
@@ -447,7 +447,7 @@ fn main() {
         // 16. Filter
         .action(
             Action::toggle("filter", "Filter")
-                .icon("filter.svg")
+                .icon("filter")
                 .inputs(vec![
                     input::query_select("source", "Source", "get-sources", &[]),
                     input::query_select("filter", "Filter", "get-filters", &["source"]).with("showIf", json!({"key": "source", "truthy": true})),
@@ -473,7 +473,7 @@ fn main() {
         // 17. Screenshot
         .action(
             Action::button("screenshot", "Screenshot")
-                .icon("screenshot.svg")
+                .icon("camera")
                 .inputs(vec![
                     input::query_select("source", "Source", "get-sources", &[]),
                     input::select("imageFormat", "Format", &[("png", "PNG"), ("jpg", "JPEG"), ("bmp", "BMP")]),
@@ -503,7 +503,7 @@ fn main() {
                 }),
         )
         // 18. Studio-mode transition
-        .action(simple_button("scene-transition", "Scene Transition", "scene-transition.svg", "TriggerStudioModeTransition"))
+        .action(simple_button("scene-transition", "Scene Transition", "arrow-right", "TriggerStudioModeTransition"))
         // Queries
         .query("get-scenes", query(|_| scenes()))
         .query("get-scene-collections", query(|_| Ok(name_list(&call("GetSceneCollectionList", json!({}))?, "sceneCollections"))))

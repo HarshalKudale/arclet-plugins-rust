@@ -279,22 +279,22 @@ mod app {
             .query("get-window-w", |_| Ok(json!(win32::window_rect(win32::foreground_window()?)?.width.to_string())))
             .query("get-window-h", |_| Ok(json!(win32::window_rect(win32::foreground_window()?)?.height.to_string())))
             // ── Current Window ──
-            .action(window_button("minimize", "Minimize", "minimize.svg", win32::minimize))
-            .action(window_button("maximize", "Maximize", "maximize.svg", win32::maximize))
-            .action(window_button("restore", "Restore", "restore.svg", win32::restore))
-            .action(window_button("close-window", "Close Window", "close.svg", win32::close_win))
-            .action(window_button("bring-to-front", "Bring to Front", "front.svg", win32::bring_to_front))
-            .action(window_button("send-to-back", "Send to Back", "back.svg", win32::send_to_back))
+            .action(window_button("minimize", "Minimize", "minus", win32::minimize))
+            .action(window_button("maximize", "Maximize", "square", win32::maximize))
+            .action(window_button("restore", "Restore", "copy", win32::restore))
+            .action(window_button("close-window", "Close Window", "x", win32::close_win))
+            .action(window_button("bring-to-front", "Bring to Front", "bring-to-front", win32::bring_to_front))
+            .action(window_button("send-to-back", "Send to Back", "send-to-back", win32::send_to_back))
             // ── Toggles ──
-            .action(window_toggle("toggle-always-on-top", "Always on Top", "topmost.svg", [("off", "Normal", "circle"), ("on", "Always on Top", "pin")], win32::always_on_top_state, |_| win32::toggle_always_on_top(None)))
-            .action(window_toggle("toggle-borderless", "Toggle Borderless", "borderless.svg", [("bordered", "Bordered", "square"), ("borderless", "Borderless", "square-dashed")], win32::borderless_state, |_| win32::toggle_borderless(None)))
+            .action(window_toggle("toggle-always-on-top", "Always on Top", "pin", [("off", "Normal", "circle"), ("on", "Always on Top", "pin")], win32::always_on_top_state, |_| win32::toggle_always_on_top(None)))
+            .action(window_toggle("toggle-borderless", "Toggle Borderless", "square-dashed", [("bordered", "Bordered", "square"), ("borderless", "Borderless", "square-dashed")], win32::borderless_state, |_| win32::toggle_borderless(None)))
             .action(
-                window_toggle("toggle-transparency", "Toggle Transparency", "transparent.svg", [("opaque", "Opaque", "square"), ("transparent", "Transparent", "square-dashed")], win32::transparency_state, |ctx| {
+                window_toggle("toggle-transparency", "Toggle Transparency", "blend", [("opaque", "Opaque", "square"), ("transparent", "Transparent", "square-dashed")], win32::transparency_state, |ctx| {
                     win32::toggle_transparency(alpha_from_opacity(&ctx.inputs), None)
                 })
                 .inputs(vec![transparency_opacity_input()]),
             )
-            .action(Action::button("set-opacity", "Set Opacity").icon("opacity.svg").inputs(opacity_preset_inputs("Opacity", "Custom opacity (0–100)")).on_press(|ctx| {
+            .action(Action::button("set-opacity", "Set Opacity").icon("droplet").inputs(opacity_preset_inputs("Opacity", "Custom opacity (0–100)")).on_press(|ctx| {
                 match preset_percent(&ctx.inputs) {
                     Some(pct) => win32::set_opacity(pct, None),
                     None => {
@@ -303,12 +303,12 @@ mod app {
                     }
                 }
             }))
-            .action(window_toggle("toggle-click-through", "Toggle Click-Through", "clickthrough.svg", [("normal", "Normal", "mouse-pointer-2"), ("clickthrough", "Click-Through", "mouse-pointer-ban")], win32::click_through_state, |_| win32::toggle_click_through(None)))
-            .action(window_toggle("toggle-max-restore", "Maximize / Restore", "maxrestore.svg", [("normal", "Windowed", "minimize-2"), ("maximized", "Maximized", "maximize-2")], win32::maximize_restore_state, |_| win32::toggle_maximize_restore(None)))
+            .action(window_toggle("toggle-click-through", "Toggle Click-Through", "mouse-pointer-click", [("normal", "Normal", "mouse-pointer-2"), ("clickthrough", "Click-Through", "mouse-pointer-ban")], win32::click_through_state, |_| win32::toggle_click_through(None)))
+            .action(window_toggle("toggle-max-restore", "Maximize / Restore", "maximize-2", [("normal", "Windowed", "minimize-2"), ("maximized", "Maximized", "maximize-2")], win32::maximize_restore_state, |_| win32::toggle_maximize_restore(None)))
             // ── Audio (per-app volume) ──
             .action(
                 Action::button("set-app-volume", "Set App Volume")
-                    .icon("volume.svg")
+                    .icon("volume-2")
                     .inputs({
                         let mut v = vec![app_select_input()];
                         v.push(
@@ -338,7 +338,7 @@ mod app {
             .action(app_volume_step("app-volume-down", "App Volume Down", -1.0))
             .action(
                 Action::toggle("toggle-app-mute", "Mute App")
-                    .icon("mute.svg")
+                    .icon("volume-x")
                     .volatile()
                     .inputs(vec![app_select_input()])
                     .state("unmuted", "Unmuted", "volume-2")
@@ -359,7 +359,7 @@ mod app {
             // A persistent slider tracking the resolved app's volume.
             .action(
                 Action::slider("app-volume", "App Volume", 0.0, 100.0)
-                    .icon("volume.svg")
+                    .icon("volume-2")
                     .unit("%")
                     .inputs(vec![app_select_input(), input::text("step", "Step (%)").placeholder("5").default_value("5")])
                     .initial_with(|ic| Some(resolve_app_exe(&ic.inputs).ok().and_then(|exe| audio::app_volume(&exe).ok().flatten()).unwrap_or(0).to_string()))
@@ -394,7 +394,7 @@ mod app {
             // ── Switch Window (taskbar-style wheel) ──
             .action(
                 Action::wheel("switch-window-wheel", "Switch to Window")
-                    .icon("switch-app.svg")
+                    .icon("layout-grid")
                     .on_open(|ctx| window_slices("switch-window-wheel").or_else(|e| ctx.fail(e.message().to_string())))
                     .on_child_press(|ctx| {
                         let Some(hwnd) = picked_window("switch-window-wheel", ctx) else {
@@ -406,40 +406,40 @@ mod app {
                     }),
             )
             // ── Position ──
-            .action(window_button("move-next-monitor", "Move to Next Monitor", "monitor.svg", win32::move_to_next_monitor))
+            .action(window_button("move-next-monitor", "Move to Next Monitor", "monitor-up", win32::move_to_next_monitor))
             .action(center_button("center-window", "Center Window"))
-            .action(snap_button("move-left-half", "Move Left Half", "snap-left.svg", reg(0.0, 0.0, 0.5, 1.0)))
-            .action(snap_button("move-right-half", "Move Right Half", "snap-right.svg", reg(0.5, 0.0, 0.5, 1.0)))
-            .action(snap_button("move-top-half", "Move Top Half", "snap-top.svg", reg(0.0, 0.0, 1.0, 0.5)))
-            .action(snap_button("move-bottom-half", "Move Bottom Half", "snap-bottom.svg", reg(0.0, 0.5, 1.0, 0.5)))
-            .action(snap_button("move-top-left", "Move Top Left", "snap-topleft.svg", reg(0.0, 0.0, 0.5, 0.5)))
-            .action(snap_button("move-top-right", "Move Top Right", "snap-topright.svg", reg(0.5, 0.0, 0.5, 0.5)))
-            .action(snap_button("move-bottom-left", "Move Bottom Left", "snap-bottomleft.svg", reg(0.0, 0.5, 0.5, 0.5)))
-            .action(snap_button("move-bottom-right", "Move Bottom Right", "snap-bottomright.svg", reg(0.5, 0.5, 0.5, 0.5)))
+            .action(snap_button("move-left-half", "Move Left Half", "panel-left", reg(0.0, 0.0, 0.5, 1.0)))
+            .action(snap_button("move-right-half", "Move Right Half", "panel-right", reg(0.5, 0.0, 0.5, 1.0)))
+            .action(snap_button("move-top-half", "Move Top Half", "panel-top", reg(0.0, 0.0, 1.0, 0.5)))
+            .action(snap_button("move-bottom-half", "Move Bottom Half", "panel-bottom", reg(0.0, 0.5, 1.0, 0.5)))
+            .action(snap_button("move-top-left", "Move Top Left", "move-up-left", reg(0.0, 0.0, 0.5, 0.5)))
+            .action(snap_button("move-top-right", "Move Top Right", "move-up-right", reg(0.5, 0.0, 0.5, 0.5)))
+            .action(snap_button("move-bottom-left", "Move Bottom Left", "move-down-left", reg(0.0, 0.5, 0.5, 0.5)))
+            .action(snap_button("move-bottom-right", "Move Bottom Right", "move-down-right", reg(0.5, 0.5, 0.5, 0.5)))
             .action(center_button("move-center", "Move Center"))
-            .action(Action::button("fullscreen", "Fullscreen").icon("fullscreen.svg").inputs(vec![monitor_input()]).on_press(|ctx| {
+            .action(Action::button("fullscreen", "Fullscreen").icon("fullscreen").inputs(vec![monitor_input()]).on_press(|ctx| {
                 let hwnd = win32::foreground_window()?;
                 win32::make_fullscreen(hwnd, win32::resolve_monitor(hwnd, &str_input(&ctx.inputs, "monitor"))?.monitor);
                 Ok(())
             }))
-            .action(Action::button("custom-position", "Custom Position").icon("move.svg").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::foreground_window()?, &ctx.inputs)));
+            .action(Action::button("custom-position", "Custom Position").icon("move").inputs(custom_position_inputs()).on_press(|ctx| apply_custom_position(win32::foreground_window()?, &ctx.inputs)));
 
         // ── Dynamic Window Actions: window-picker wheels ──
         // "Bring to Front" is already covered by "Switch to Window", so it isn't duplicated here.
         p = p
-            .action(picker_wheel("dynamic-minimize-wheel", "Dynamic Minimize", "minimize.svg", vec![], |_, w| win32::minimize(Some(w))))
-            .action(picker_wheel("dynamic-maximize-wheel", "Dynamic Maximize", "maximize.svg", vec![], |_, w| win32::maximize(Some(w))))
-            .action(picker_wheel("dynamic-restore-wheel", "Dynamic Restore", "restore.svg", vec![], |_, w| win32::restore(Some(w))))
-            .action(picker_wheel("dynamic-close-wheel", "Dynamic Close", "close.svg", vec![], |_, w| win32::close_win(Some(w))))
-            .action(picker_wheel("dynamic-send-to-back-wheel", "Dynamic Send to Back", "back.svg", vec![], |_, w| win32::send_to_back(Some(w))))
-            .action(picker_wheel("dynamic-always-on-top-wheel", "Dynamic Always on Top", "topmost.svg", vec![], |_, w| win32::toggle_always_on_top(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-borderless-wheel", "Dynamic Borderless", "borderless.svg", vec![], |_, w| win32::toggle_borderless(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-transparency-wheel", "Dynamic Transparency", "transparent.svg", vec![transparency_opacity_input()], |ctx, w| {
+            .action(picker_wheel("dynamic-minimize-wheel", "Dynamic Minimize", "minus", vec![], |_, w| win32::minimize(Some(w))))
+            .action(picker_wheel("dynamic-maximize-wheel", "Dynamic Maximize", "square", vec![], |_, w| win32::maximize(Some(w))))
+            .action(picker_wheel("dynamic-restore-wheel", "Dynamic Restore", "copy", vec![], |_, w| win32::restore(Some(w))))
+            .action(picker_wheel("dynamic-close-wheel", "Dynamic Close", "x", vec![], |_, w| win32::close_win(Some(w))))
+            .action(picker_wheel("dynamic-send-to-back-wheel", "Dynamic Send to Back", "send-to-back", vec![], |_, w| win32::send_to_back(Some(w))))
+            .action(picker_wheel("dynamic-always-on-top-wheel", "Dynamic Always on Top", "pin", vec![], |_, w| win32::toggle_always_on_top(Some(w)).map(|_| ())))
+            .action(picker_wheel("dynamic-borderless-wheel", "Dynamic Borderless", "square-dashed", vec![], |_, w| win32::toggle_borderless(Some(w)).map(|_| ())))
+            .action(picker_wheel("dynamic-transparency-wheel", "Dynamic Transparency", "blend", vec![transparency_opacity_input()], |ctx, w| {
                 win32::toggle_transparency(alpha_from_opacity(&ctx.inputs), Some(w)).map(|_| ())
             }))
-            .action(picker_wheel("dynamic-click-through-wheel", "Dynamic Click-Through", "clickthrough.svg", vec![], |_, w| win32::toggle_click_through(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-max-restore-wheel", "Dynamic Maximize / Restore", "maxrestore.svg", vec![], |_, w| win32::toggle_maximize_restore(Some(w)).map(|_| ())))
-            .action(picker_wheel("dynamic-set-opacity-wheel", "Dynamic Set Opacity", "opacity.svg", {
+            .action(picker_wheel("dynamic-click-through-wheel", "Dynamic Click-Through", "mouse-pointer-click", vec![], |_, w| win32::toggle_click_through(Some(w)).map(|_| ())))
+            .action(picker_wheel("dynamic-max-restore-wheel", "Dynamic Maximize / Restore", "maximize-2", vec![], |_, w| win32::toggle_maximize_restore(Some(w)).map(|_| ())))
+            .action(picker_wheel("dynamic-set-opacity-wheel", "Dynamic Set Opacity", "droplet", {
                 let mut v = vec![input::select("preset", "Opacity", &opacity_options(true)).with("default", "75")];
                 v.push(input::text("custom", "Custom opacity (0–100)").placeholder("75").with("showIf", json!({"key": "preset", "equals": "__custom__"})));
                 v
@@ -450,21 +450,21 @@ mod app {
                     Ok(())
                 }
             }))
-            .action(picker_wheel("dynamic-move-next-monitor-wheel", "Dynamic Move to Next Monitor", "monitor.svg", vec![], |_, w| win32::move_to_next_monitor(Some(w))))
-            .action(picker_wheel("dynamic-center-window-wheel", "Dynamic Center Window", "center.svg", vec![monitor_input()], |ctx, w| win32::center_window(w, work_of(w, &ctx.inputs)?)))
-            .action(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Fullscreen", "fullscreen.svg", vec![monitor_input()], |ctx, w| {
+            .action(picker_wheel("dynamic-move-next-monitor-wheel", "Dynamic Move to Next Monitor", "monitor-up", vec![], |_, w| win32::move_to_next_monitor(Some(w))))
+            .action(picker_wheel("dynamic-center-window-wheel", "Dynamic Center Window", "focus", vec![monitor_input()], |ctx, w| win32::center_window(w, work_of(w, &ctx.inputs)?)))
+            .action(picker_wheel("dynamic-fullscreen-wheel", "Dynamic Fullscreen", "fullscreen", vec![monitor_input()], |ctx, w| {
                 win32::make_fullscreen(w, win32::resolve_monitor(w, &str_input(&ctx.inputs, "monitor"))?.monitor);
                 Ok(())
             }))
-            .action(snap_picker("dynamic-move-left-half-wheel", "Dynamic Move Left Half", "snap-left.svg", reg(0.0, 0.0, 0.5, 1.0)))
-            .action(snap_picker("dynamic-move-right-half-wheel", "Dynamic Move Right Half", "snap-right.svg", reg(0.5, 0.0, 0.5, 1.0)))
-            .action(snap_picker("dynamic-move-top-half-wheel", "Dynamic Move Top Half", "snap-top.svg", reg(0.0, 0.0, 1.0, 0.5)))
-            .action(snap_picker("dynamic-move-bottom-half-wheel", "Dynamic Move Bottom Half", "snap-bottom.svg", reg(0.0, 0.5, 1.0, 0.5)))
-            .action(snap_picker("dynamic-move-top-left-wheel", "Dynamic Move Top Left", "snap-topleft.svg", reg(0.0, 0.0, 0.5, 0.5)))
-            .action(snap_picker("dynamic-move-top-right-wheel", "Dynamic Move Top Right", "snap-topright.svg", reg(0.5, 0.0, 0.5, 0.5)))
-            .action(snap_picker("dynamic-move-bottom-left-wheel", "Dynamic Move Bottom Left", "snap-bottomleft.svg", reg(0.0, 0.5, 0.5, 0.5)))
-            .action(snap_picker("dynamic-move-bottom-right-wheel", "Dynamic Move Bottom Right", "snap-bottomright.svg", reg(0.5, 0.5, 0.5, 0.5)))
-            .action(picker_wheel("dynamic-custom-position-wheel", "Dynamic Custom Position", "move.svg", custom_position_inputs(), |ctx, w| apply_custom_position(w, &ctx.inputs)));
+            .action(snap_picker("dynamic-move-left-half-wheel", "Dynamic Move Left Half", "panel-left", reg(0.0, 0.0, 0.5, 1.0)))
+            .action(snap_picker("dynamic-move-right-half-wheel", "Dynamic Move Right Half", "panel-right", reg(0.5, 0.0, 0.5, 1.0)))
+            .action(snap_picker("dynamic-move-top-half-wheel", "Dynamic Move Top Half", "panel-top", reg(0.0, 0.0, 1.0, 0.5)))
+            .action(snap_picker("dynamic-move-bottom-half-wheel", "Dynamic Move Bottom Half", "panel-bottom", reg(0.0, 0.5, 1.0, 0.5)))
+            .action(snap_picker("dynamic-move-top-left-wheel", "Dynamic Move Top Left", "move-up-left", reg(0.0, 0.0, 0.5, 0.5)))
+            .action(snap_picker("dynamic-move-top-right-wheel", "Dynamic Move Top Right", "move-up-right", reg(0.5, 0.0, 0.5, 0.5)))
+            .action(snap_picker("dynamic-move-bottom-left-wheel", "Dynamic Move Bottom Left", "move-down-left", reg(0.0, 0.5, 0.5, 0.5)))
+            .action(snap_picker("dynamic-move-bottom-right-wheel", "Dynamic Move Bottom Right", "move-down-right", reg(0.5, 0.5, 0.5, 0.5)))
+            .action(picker_wheel("dynamic-custom-position-wheel", "Dynamic Custom Position", "move", custom_position_inputs(), |ctx, w| apply_custom_position(w, &ctx.inputs)));
 
         // ── Virtual Desktops & System ──
         // Shell objects / URIs / programs through ShellExecute; keystrokes only where
@@ -514,7 +514,7 @@ mod app {
 
         // ── Clipboard History ──
         p.action(
-            Action::wheel("clipboard-history-wheel", "Clipboard History").icon("clipboard.svg").on_open(|ctx| {
+            Action::wheel("clipboard-history-wheel", "Clipboard History").icon("clipboard-list").on_open(|ctx| {
                 let history = clipboard::list_history().or_else(|e| ctx.fail(e.message().to_string()))?;
                 log(format!("historyEnabled: {}, items: {}", history.enabled, history.items.len()));
                 if !history.enabled {
@@ -562,7 +562,7 @@ mod app {
 
     fn app_volume_step(id: &str, label: &str, sign: f64) -> Action {
         Action::button(id, label)
-            .icon("volume.svg")
+            .icon("volume-2")
             .inputs(vec![app_select_input(), input::text("step", "Step (%)").placeholder("5").default_value("5")])
             .on_press(move |ctx| {
                 let exe = resolve_app_exe(&ctx.inputs)?;
@@ -590,7 +590,7 @@ mod app {
     }
 
     fn center_button(id: &str, label: &str) -> Action {
-        Action::button(id, label).icon("center.svg").inputs(vec![monitor_input()]).on_press(|ctx| {
+        Action::button(id, label).icon("focus").inputs(vec![monitor_input()]).on_press(|ctx| {
             let hwnd = win32::foreground_window()?;
             win32::center_window(hwnd, work_of(hwnd, &ctx.inputs)?)
         })

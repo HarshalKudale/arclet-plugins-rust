@@ -300,7 +300,7 @@ fn main() {
                     send_browser_keys(&browser_value(&ctx.inputs), &keys)
                 }),
         )
-        .action(Action::button("stop-loading", "Stop Loading").icon("stop.svg").inputs(vec![browser_input()]).on_press(|ctx| {
+        .action(Action::button("stop-loading", "Stop Loading").icon("circle-stop").inputs(vec![browser_input()]).on_press(|ctx| {
             // Fire-and-forget like the JS plugin: a failed Esc is logged, not surfaced.
             let key = browser_key(&ctx.inputs)?;
             if let Err(e) = browser_action(key, "stop-loading", "esc") {
@@ -316,11 +316,11 @@ fn main() {
         )
         .action(hold_repeat("hold-next-tab", "Hold Next Tab", "notebook-tabs", ("Idle", "chevron-right"), ("Cycling", "chevrons-right"), |i| tab_step("next-tab", NEXT_TAB)(i)))
         .action(hold_repeat("hold-previous-tab", "Hold Previous Tab", "notebook-tabs", ("Idle", "chevron-left"), ("Cycling", "chevrons-left"), |i| tab_step("previous-tab", PREV_TAB)(i)))
-        .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom.svg", ("Idle", "zoom-in"), ("Zooming", "zoom-in"), |i| zoom_step(Zoom::In)(i)))
-        .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom.svg", ("Idle", "zoom-out"), ("Zooming", "zoom-out"), |i| zoom_step(Zoom::Out)(i)))
+        .action(hold_repeat("hold-zoom-in", "Hold Zoom In", "zoom-in", ("Idle", "zoom-in"), ("Zooming", "zoom-in"), |i| zoom_step(Zoom::In)(i)))
+        .action(hold_repeat("hold-zoom-out", "Hold Zoom Out", "zoom-in", ("Idle", "zoom-out"), ("Zooming", "zoom-out"), |i| zoom_step(Zoom::Out)(i)))
         .action(
             Action::slider("page-zoom", "Page Zoom", 25.0, 300.0)
-                .icon("zoom.svg")
+                .icon("zoom-in")
                 .step(5.0)
                 .unit("%")
                 .inputs(vec![browser_input()])

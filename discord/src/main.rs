@@ -456,17 +456,17 @@ fn main() {
 
     plugin
         // 1–2. Mute, deafen
-        .action(voice_toggle("mute", "Mute", "mute_0.png", [("unmuted", "Unmuted", "mute_0.png"), ("muted", "Muted", "mute_1.png")], |s| s.muted, "mute", |s, v| s.muted = v))
-        .action(voice_toggle("deafen", "Deafen", "deafen_0.png", [("undeafened", "Undeafened", "deafen_0.png"), ("deafened", "Deafened", "deafen_1.png")], |s| s.deafened, "deaf", |s, v| s.deafened = v))
+        .action(voice_toggle("mute", "Mute", "mic", [("unmuted", "Unmuted", "mic"), ("muted", "Muted", "mic-off")], |s| s.muted, "mute", |s, v| s.muted = v))
+        .action(voice_toggle("deafen", "Deafen", "headphones", [("undeafened", "Undeafened", "headphones"), ("deafened", "Deafened", "headphone-off")], |s| s.deafened, "deaf", |s, v| s.deafened = v))
         // 3–4. Push to talk / mute
-        .action(hold_voice("push-to-talk", "Push to Talk", "pushtotalk_0.svg", ("Idle", "pushtotalk_0.svg"), ("Talking", "pushtotalk_1.svg"), false))
-        .action(hold_voice("push-to-mute", "Push to Mute", "pushtomute_0.svg", ("Active", "pushtomute_0.svg"), ("Muted", "pushtomute_1.svg"), true))
+        .action(hold_voice("push-to-talk", "Push to Talk", "mic-off", ("Idle", "mic-off"), ("Talking", "mic"), false))
+        .action(hold_voice("push-to-mute", "Push to Mute", "mic", ("Active", "mic"), ("Muted", "mic-off"), true))
         // 5. Voice input mode
         .action(
             Action::toggle("voice-mode-toggle", "Voice Input Mode")
-                .icon("headphonesAndMicrophone.svg")
-                .state("VOICE_ACTIVITY", "Voice Activity", "headphonesAndMicrophone.svg")
-                .state("PUSH_TO_TALK", "Push to Talk", "ptttoggle_0.svg")
+                .icon("audio-lines")
+                .state("VOICE_ACTIVITY", "Voice Activity", "audio-lines")
+                .state("PUSH_TO_TALK", "Push to Talk", "keyboard")
                 .initial_with(|_| Some(state().voice_mode.clone()))
                 .on_press(|ctx| {
                     let c = ensure_ready()?;
@@ -480,9 +480,9 @@ fn main() {
         // 6a. Join voice channel
         .action(
             Action::toggle("join-voice-channel", "Join Voice Channel")
-                .icon("voice_1.png")
-                .state("idle", "Join", "voice_1.png")
-                .state("in", "In Channel", "voice_0.png")
+                .icon("volume-2")
+                .state("idle", "Join", "volume-2")
+                .state("in", "In Channel", "audio-lines")
                 .inputs(vec![
                     guild_input(),
                     input::query_select("channelId", "Voice Channel", "discord-get-voice-channels", &["guildId"]).with("showIf", json!({"key": "guildId", "truthy": true})),
@@ -526,9 +526,9 @@ fn main() {
         // 6b. Leave voice channel
         .action(
             Action::toggle("leave-voice-channel", "Leave Voice Channel")
-                .icon("Disconnect.png")
-                .state("idle", "Not in Call", "Disconnect.png")
-                .state("in-call", "In Call — Disconnect", "end_call.png")
+                .icon("phone-off")
+                .state("idle", "Not in Call", "phone-off")
+                .state("in-call", "In Call — Disconnect", "phone-off")
                 .initial_with(|_| Some((if state().current_channel_id.is_some() { "in-call" } else { "idle" }).into()))
                 .on_press(|ctx| {
                     // Not in any channel — button is in the "idle" state; do nothing.
@@ -552,7 +552,7 @@ fn main() {
         // 7. Text channel
         .action(
             Action::button("text-channel", "Text Channel")
-                .icon("textchannel.svg")
+                .icon("hash")
                 .inputs(vec![
                     guild_input(),
                     input::query_select("channelId", "Text Channel", "discord-get-text-channels", &["guildId"]).with("showIf", json!({"key": "guildId", "truthy": true})),
@@ -569,7 +569,7 @@ fn main() {
         // 7b. Server jump
         .action(
             Action::button("server-jump", "Server Jump")
-                .icon("textchannel.svg")
+                .icon("hash")
                 .inputs(vec![
                     guild_input(),
                     input::query_select("channelId", "Landing Channel (optional)", "discord-get-text-channels", &["guildId"]).with("showIf", json!({"key": "guildId", "truthy": true})),
@@ -596,7 +596,7 @@ fn main() {
         // 7c. Open direct message
         .action(
             Action::button("open-direct-message", "Open Direct Message")
-                .icon("textchannel.svg")
+                .icon("hash")
                 .inputs(vec![input::query_select("friendId", "Friend", "discord-get-friends", &[])])
                 .on_press(|ctx| {
                     let c = ensure_ready()?;
@@ -617,8 +617,8 @@ fn main() {
                 }),
         )
         // 8–9. Video, stream
-        .action(screen_toggle("video-toggle", "Video Toggle", "video_0_off.svg", [("off", "Camera Off", "video_0.svg"), ("on", "Camera On", "video_1.svg")], "TOGGLE_VIDEO", |s| s.video_enabled, |s, v| s.video_enabled = v))
-        .action(screen_toggle("stream-toggle", "Stream Toggle", "stream_0.png", [("off", "Share Off", "stream_0.png"), ("on", "Sharing", "stream_1.png")], "TOGGLE_SCREENSHARE", |s| s.stream_enabled, |s, v| s.stream_enabled = v))
+        .action(screen_toggle("video-toggle", "Video Toggle", "video-off", [("off", "Camera Off", "video-off"), ("on", "Camera On", "video")], "TOGGLE_VIDEO", |s| s.video_enabled, |s, v| s.video_enabled = v))
+        .action(screen_toggle("stream-toggle", "Stream Toggle", "screen-share-off", [("off", "Share Off", "screen-share-off"), ("on", "Sharing", "screen-share")], "TOGGLE_SCREENSHARE", |s| s.stream_enabled, |s, v| s.stream_enabled = v))
         // 10. Volume control
         .action(
             Action::button("volume-control", "Volume Control")
@@ -723,7 +723,7 @@ fn main() {
         // 12. Audio device
         .action(
             Action::button("set-audio-device", "Set Audio Device")
-                .icon("headphonesAndMicrophone_1.svg")
+                .icon("headset")
                 .inputs(vec![
                     input::select("deviceType", "Device Type", &[("output", "Output (Speakers)"), ("input", "Input (Microphone)"), ("both", "Both")]),
                     input::query_select("deviceId", "Device", "discord-get-audio-devices", &["deviceType"]),
@@ -744,7 +744,7 @@ fn main() {
         // 13. Soundboard
         .action(
             Action::button("soundboard", "Soundboard")
-                .icon("soundboard.svg")
+                .icon("audio-waveform")
                 .inputs(vec![sound_source_input(), input::query_select("soundId", "Sound", "discord-get-soundboard-sounds", &["guildId"])])
                 .on_press(|ctx| {
                     let c = ensure_ready()?;
@@ -758,7 +758,7 @@ fn main() {
         // 13b. Voice channel wheel
         .action(
             Action::wheel("voice-channel-wheel", "Voice Channels")
-                .icon("voice_1.png")
+                .icon("volume-2")
                 .inputs(vec![guild_input(), input::checkbox("force", "Force Join").default_value(true)])
                 .on_open(|ctx| {
                     let c = ensure_ready()?;
@@ -776,7 +776,7 @@ fn main() {
                         .map(|(i, ch)| {
                             let child = format!("voice-{i}");
                             let id = ch["id"].as_str().unwrap_or("").to_string();
-                            let icon = if cur.as_deref() == Some(id.as_str()) { "voice_0.png" } else { "voice_1.png" };
+                            let icon = if cur.as_deref() == Some(id.as_str()) { "audio-lines" } else { "volume-2" };
                             map.insert(child.clone(), (id, guild.clone()));
                             json!({"id": child, "label": name_of(ch), "icon": icon})
                         })
@@ -804,7 +804,7 @@ fn main() {
         // 13c. Call member mute wheel
         .action(
             Action::wheel("call-member-mute-wheel", "Call Member Mute")
-                .icon("mute_0.png")
+                .icon("mic")
                 .on_open(|ctx| {
                     let c = ensure_ready()?;
                     if state().current_channel_id.is_none() {
@@ -824,7 +824,7 @@ fn main() {
                             let uid = user["id"].as_str().unwrap_or("").to_string();
                             let muted = state().user_volume(&uid).1;
                             map.insert(child.clone(), uid);
-                            json!({"id": child, "label": display_name_for_user(user), "icon": if muted { "mute_1.png" } else { "mute_0.png" }})
+                            json!({"id": child, "label": display_name_for_user(user), "icon": if muted { "mic-off" } else { "mic" }})
                         })
                         .collect();
                     *MEMBER_WHEEL.lock().unwrap() = Some(map);
@@ -846,7 +846,7 @@ fn main() {
         // 13d. Activity preset
         .action(
             Action::button("activity-preset", "Activity Preset")
-                .icon("discord.png")
+                .icon("discord-logo.svg")
                 .inputs(vec![
                     input::text("details", "Details").placeholder("Pair programming"),
                     input::text("stateText", "State").placeholder("In KnobDeck"),
@@ -876,7 +876,7 @@ fn main() {
         // 13e. Soundboard wheel
         .action(
             Action::wheel("soundboard-wheel", "Soundboard Wheel")
-                .icon("soundboard.svg")
+                .icon("audio-waveform")
                 .inputs(vec![sound_source_input()])
                 .on_open(|ctx| {
                     ensure_ready()?;
@@ -894,7 +894,7 @@ fn main() {
                             let child = format!("sound-{i}");
                             map.insert(child.clone(), (sound_id(sound), Some(guild.clone()).filter(|g| g != "__default__")));
                             let label = sound["name"].as_str().filter(|n| !n.is_empty()).map(String::from).unwrap_or_else(|| format!("Sound {}", i + 1));
-                            json!({"id": child, "label": label, "icon": "soundboard.svg"})
+                            json!({"id": child, "label": label, "icon": "audio-waveform"})
                         })
                         .collect();
                     *SOUND_WHEEL.lock().unwrap() = Some(map);
@@ -913,9 +913,9 @@ fn main() {
         // 14. Notifications
         .action(
             Action::toggle("notifications", "Notifications")
-                .icon("notifications.svg")
-                .state("none", "No Alerts", "notifications.svg")
-                .state("active", "Unread!", "notifications.svg")
+                .icon("bell")
+                .state("none", "No Alerts", "bell")
+                .state("active", "Unread!", "bell")
                 .inputs(vec![input::select("onPress", "On Press Action", &[("nothing", "Do nothing"), ("clear", "Clear count"), ("open_channel", "Open most recent channel")])])
                 .initial_with(|_| Some((if state().notification_count > 0 { "active" } else { "none" }).into()))
                 .on_press(|ctx| {

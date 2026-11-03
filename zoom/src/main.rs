@@ -174,9 +174,9 @@ fn main() {
         // 1. Meeting status indicator
         .action(
             Action::toggle("meeting-status", "Meeting Status")
-                .icon("meeting_status.svg")
-                .state("idle", "Not in Meeting", "meeting_status.svg")
-                .state("in-meeting", "In Meeting", "meeting_status.svg")
+                .icon("clock")
+                .state("idle", "Not in Meeting", "clock")
+                .state("in-meeting", "In Meeting", "clock")
                 .initial_with(|_| Some(pick(st().in_meeting, "in-meeting", "idle").into()))
                 .on_press(|ctx| {
                     poll(); // re-poll on press for fresh state
@@ -188,8 +188,8 @@ fn main() {
         .action(meeting_toggle(
             "toggle-mute",
             "Toggle Mute",
-            "mute_off.svg",
-            [("unmuted", "Unmuted", "mute_off.svg"), ("muted", "Muted", "mute_on.svg")],
+            "mic",
+            [("unmuted", "Unmuted", "mic"), ("muted", "Muted", "mic-off")],
             |s| s.muted,
             |s, v| s.muted = v,
             |muted| patch("/audio", json!({"action": pick(muted, "unmute", "mute")})),
@@ -197,9 +197,9 @@ fn main() {
         // 3. Push-to-talk
         .action(
             Action::hold("push-to-talk", "Push to Talk")
-                .icon("mute_off.svg")
-                .released("Idle", "mute_off.svg")
-                .held("Talking", "mute_off.svg")
+                .icon("mic")
+                .released("Idle", "mic")
+                .held("Talking", "mic")
                 .on_hold_start(|ctx| {
                     if !st().in_meeting {
                         return Ok(());
@@ -225,8 +225,8 @@ fn main() {
         .action(meeting_toggle(
             "toggle-video",
             "Toggle Video",
-            "video_on.svg",
-            [("on", "Camera On", "video_on.svg"), ("off", "Camera Off", "video_off.svg")],
+            "video",
+            [("on", "Camera On", "video"), ("off", "Camera Off", "video-off")],
             |s| s.video_off,
             |s, v| s.video_off = v,
             |off| patch("/video", json!({"action": pick(off, "startVideo", "stopVideo")})),
@@ -235,8 +235,8 @@ fn main() {
         .action(meeting_toggle(
             "toggle-screen-share",
             "Screen Share",
-            "share_off.svg",
-            [("idle", "Not Sharing", "share_off.svg"), ("sharing", "Sharing", "share_on.svg")],
+            "screen-share-off",
+            [("idle", "Not Sharing", "screen-share-off"), ("sharing", "Sharing", "screen-share")],
             |s| s.sharing,
             |s, v| s.sharing = v,
             |sharing| patch("/sharing", json!({"action": pick(sharing, "stopShare", "startShare")})),
@@ -245,8 +245,8 @@ fn main() {
         .action(meeting_toggle(
             "raise-hand",
             "Raise / Lower Hand",
-            "hand_raise.svg",
-            [("lowered", "Hand Down", "hand_raise.svg"), ("raised", "Hand Up", "hand_raise.svg")],
+            "hand",
+            [("lowered", "Hand Down", "hand"), ("raised", "Hand Up", "hand")],
             |s| s.hand_raised,
             |s, v| s.hand_raised = v,
             |raised| patch("/reaction", json!({"action": pick(raised, "lowerHand", "raiseHand")})),
@@ -254,7 +254,7 @@ fn main() {
         // 7. Emoji reaction
         .action(
             Action::button("react-emoji", "React (Emoji)")
-                .icon("hand_raise.svg")
+                .icon("hand")
                 .inputs(vec![input::select(
                     "emoji",
                     "Emoji",
@@ -282,21 +282,21 @@ fn main() {
         .action(meeting_toggle(
             "toggle-recording",
             "Record",
-            "record.svg",
-            [("stopped", "Not Recording", "record.svg"), ("recording", "Recording", "record_stop.svg")],
+            "circle-dot",
+            [("stopped", "Not Recording", "circle-dot"), ("recording", "Recording", "circle-stop")],
             |s| s.recording,
             |s, v| s.recording = v,
             |rec| patch("/recording", json!({"action": pick(rec, "stop", "start")})),
         ))
         // 9–10. Leave / End
-        .action(meeting_exit("leave-meeting", "Leave Meeting", "leave.svg", "leave"))
-        .action(meeting_exit("end-meeting", "End Meeting (Host)", "end_meeting.svg", "end"))
+        .action(meeting_exit("leave-meeting", "Leave Meeting", "log-out", "leave"))
+        .action(meeting_exit("end-meeting", "End Meeting (Host)", "circle-x", "end"))
         // 11–12. Panels
         .action(meeting_toggle(
             "toggle-participants",
             "Participants Panel",
-            "participants.svg",
-            [("closed", "Closed", "participants.svg"), ("open", "Open", "participants.svg")],
+            "users",
+            [("closed", "Closed", "users"), ("open", "Open", "users")],
             |s| s.participants_open,
             |s, v| s.participants_open = v,
             |open| patch("/participants", json!({"action": pick(open, "closeParticipantPanel", "openParticipantPanel")})),
@@ -304,8 +304,8 @@ fn main() {
         .action(meeting_toggle(
             "toggle-chat",
             "Chat Panel",
-            "chat.svg",
-            [("closed", "Closed", "chat.svg"), ("open", "Open", "chat.svg")],
+            "message-square",
+            [("closed", "Closed", "message-square"), ("open", "Open", "message-square")],
             |s| s.chat_open,
             |s, v| s.chat_open = v,
             |open| patch("/chat", json!({"action": pick(open, "closeChat", "openChat")})),

@@ -1,7 +1,7 @@
 {
   "plugins": {
     "browser-plugin": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Browser Controls",
       "summary": "Shortcuts, bookmarks and history for your browser.",
       "tags": [
@@ -21,7 +21,7 @@
       "sort": 90
     },
     "discord": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "name": "Discord",
       "summary": "Mute, deafen, push-to-talk, channels and soundboard.",
       "tags": [
@@ -42,7 +42,7 @@
       "sort": 70
     },
     "mac-tools": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "macOS Tools",
       "summary": "Window management, Spaces, audio devices, clipboard history.",
       "tags": [
@@ -53,7 +53,7 @@
       "sort": 41
     },
     "obs": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "OBS Studio",
       "summary": "Scenes, sources, recording and streaming.",
       "tags": [
@@ -85,7 +85,7 @@
       "sort": 30
     },
     "win-tools": {
-      "version": "1.1.1",
+      "version": "1.1.2",
       "name": "Windows Tools",
       "summary": "Window management, per-app volume, clipboard history.",
       "tags": [
@@ -96,7 +96,7 @@
       "sort": 40
     },
     "zoom": {
-      "version": "1.0.0",
+      "version": "1.0.1",
       "name": "Zoom",
       "summary": "Meeting controls for Zoom calls.",
       "tags": [
