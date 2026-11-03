@@ -45,7 +45,7 @@ Windows, `~/Library/Application Support/KnobDeck/plugin-data/discord/` on macOS)
 so you only run setup again if you revoke access in Discord (**User Settings → Authorized Apps**).
 
 There is no Discord developer app or client secret to create: the token exchange happens on
-`knobdeck.harshalkudale.com`, so the secret never ships with the plugin.
+`app.knobdeck.harshalkudale.com`, so the secret never ships with the plugin.
 
 ---
 

@@ -8,7 +8,8 @@ import { OS_PLUGINS, findEntry, readIndex } from "./plugins.mjs";
 
 const [tag, prevTag, prevPath] = process.argv.slice(2);
 const REPO = "https://github.com/HarshalKudale/knobdeck-plugins";
-const SITE = "https://knobdeck.harshalkudale.com";
+// Registry site (knobdeck-app-site repo): serves registry.json and the readmes.
+const SITE = "https://app.knobdeck.harshalkudale.com";
 // Icons live in the repo and are hot-linked from here, so changing one needs no release.
 const RAW = "https://raw.githubusercontent.com/HarshalKudale/knobdeck-plugins/master";
 const index = readIndex();
@@ -41,7 +42,7 @@ const iconUrl = (dir, icon) =>
 const plugins = entries
   .map(({ dir, ...e }) => {
     const meta = index[dir];
-    const base = `${SITE}/registry/${e.id}`;
+    const base = `${SITE}/plugins/${e.id}`;
     return {
       id: e.id,
       name: meta.name,
