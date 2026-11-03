@@ -226,7 +226,8 @@ unsafe extern "system" fn window_cb(hwnd: HWND, data: LPARAM) -> BOOL {
 }
 
 // KnobDeck's own helper windows (overlay, tray…) must not list themselves as switch targets.
-const KNOBDECK_EXE_NAME: &str = "knobdeck-app.exe";
+// Dev builds run `knobdeck-app.exe`; installed Tauri builds are named after productName.
+const KNOBDECK_EXE_NAMES: [&str; 2] = ["knobdeck-app.exe", "KnobDeck.exe"];
 const KNOBDECK_MAIN_WINDOW_TITLE: &str = "KnobDeck — Wheel Editor";
 
 /// Every open top-level window, in Z-order (topmost first).
@@ -244,7 +245,7 @@ pub fn list_open_windows() -> Vec<OpenWindow> {
             }
             let pid = window_process_id(hwnd);
             let exe_name = names.get(&pid).cloned();
-            let internal = exe_name.as_deref().map_or(false, |e| e.eq_ignore_ascii_case(KNOBDECK_EXE_NAME)) && title != KNOBDECK_MAIN_WINDOW_TITLE;
+            let internal = exe_name.as_deref().map_or(false, |e| KNOBDECK_EXE_NAMES.iter().any(|n| e.eq_ignore_ascii_case(n))) && title != KNOBDECK_MAIN_WINDOW_TITLE;
             (!internal).then_some(OpenWindow { hwnd, title, pid, exe_name })
         })
         .collect()

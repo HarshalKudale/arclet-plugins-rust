@@ -1,6 +1,6 @@
 # KnobDeck Plugins (Rust)
 
-Rust ports of the first-party [KnobDeck](https://github.com/HarshalKudale/Arclet) plugins in
+Rust ports of the first-party [KnobDeck](https://github.com/HarshalKudale/knobdeck) plugins in
 [`../knobdeck-plugins`](../knobdeck-plugins), built on [`knobdeck-sdk`](../knobdeck-sdk-rust). Each plugin
 generates the **same `actions.json` as its JS original** (same action ids, inputs, states), so
 placed slices carry over.

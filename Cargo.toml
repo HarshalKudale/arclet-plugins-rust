@@ -3,7 +3,7 @@ resolver = "2"
 members = ["zoom", "vlc", "vscode", "intellij", "obs", "browser-plugin", "discord", "win-tools", "mac-tools", "claude"]
 
 [workspace.dependencies]
-knobdeck-sdk = { git = "https://github.com/HarshalKudale/arclet-sdk-rust.git" }
+knobdeck-sdk = { git = "https://github.com/HarshalKudale/knobdeck-sdk.git" }
 ureq = { version = "2", features = ["json"] }
 base64 = "0.22"
 serde_json = "1"
