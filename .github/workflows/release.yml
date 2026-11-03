@@ -55,6 +55,9 @@ jobs:
             '${{ vars.DISCORD_CLIENT_ID }}' '${{ vars.KNOBDECK_DISCORD_TOKEN_URL }}' > discord/.env
       - name: Package plugins
         shell: bash
+        # App credentials baked in at build time (option_env!); unset ones leave the plugin asking for its own in setup.
+        env:
+          VOICEMOD_CLIENT_KEY: ${{ vars.VOICEMOD_CLIENT_KEY }}
         run: |
           for d in ${{ matrix.plugins }}; do
             (cd "$d" && knobdeck-plugin build && knobdeck-plugin package)

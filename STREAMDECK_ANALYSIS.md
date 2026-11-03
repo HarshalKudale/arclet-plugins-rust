@@ -363,6 +363,7 @@ reuses one client.
 | weather 1.0.0 (#18): Weather, Forecast wheel, Hourly wheel, Air Quality — Open-Meteo, no key | done (tested against the live API) |
 | clocks 1.0.0 (#13 + Stream Deck's Timer): Clock (any zone), World Clock wheel, Countdown Timer, Stopwatch | done |
 | streamlabs 1.0.0 (#19, #31): Go Live, Record, Replay Buffer, Save Replay, Scene, Source Visibility, Mute, Volume | done (tested against a scripted API server built from Streamlabs' docs; not against the real app) |
+| voicemod 1.0.0 (#4): Voice Changer, Hear Myself, Background Effects, Mute Mic, Mute Sounds for Me, Select/Random Voice, Favorites wheel, Play/Stop Sound, Bleep | done (tested against a scripted Control API server; needs the VOICEMOD_CLIENT_KEY repo variable or a user key) |
 
 ## 8. Suggested order
 

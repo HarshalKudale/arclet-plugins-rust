@@ -103,6 +103,16 @@
       ],
       "sort": 80
     },
+    "voicemod": {
+      "version": "1.0.0",
+      "name": "Voicemod",
+      "summary": "Voices, voice changer, hear myself, mic mute and soundboard.",
+      "tags": [
+        "Voice",
+        "Streaming"
+      ],
+      "sort": 26
+    },
     "vscode": {
       "version": "1.0.0",
       "name": "Visual Studio Code",
