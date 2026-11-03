@@ -83,6 +83,17 @@
       "featured": true,
       "sort": 20
     },
+    "spotify": {
+      "version": "1.0.0",
+      "name": "Spotify",
+      "summary": "Play, skip, like, shuffle, repeat, volume and playlists.",
+      "tags": [
+        "Music",
+        "Media"
+      ],
+      "featured": true,
+      "sort": 15
+    },
     "streamlabs": {
       "version": "1.0.0",
       "name": "Streamlabs Desktop",

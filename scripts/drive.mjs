@@ -5,6 +5,7 @@
 // steps.json is an array run in order after hello → ready. Each step is either a raw protocol
 // message ({"type": "sync" | "invoke" | "request" | "event", ...}) or {"wait": ms}. Requests get an
 // id when they have none. Every line the plugin prints is echoed; a non-JSON stdout line fails.
+// KD_DATA_DIR sets the plugin's data folder (to pre-place .env or a sign-in token).
 import { spawn } from "node:child_process";
 import { readFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -42,7 +43,7 @@ const send = (msg) => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-send({ type: "hello", protocol: 2, plugin_id: "drive", data_dir: mkdtempSync(join(tmpdir(), "kd-drive-")), host_version: "drive" });
+send({ type: "hello", protocol: 2, plugin_id: "drive", data_dir: process.env.KD_DATA_DIR ?? mkdtempSync(join(tmpdir(), "kd-drive-")), host_version: "drive" });
 await Promise.race([isReady, sleep(10000).then(() => Promise.reject(new Error("no ready within 10 s")))]);
 let n = 0;
 for (const step of steps) {

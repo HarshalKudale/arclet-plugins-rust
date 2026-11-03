@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 
 /** Plugin folders that ship on each OS. */
 export const OS_PLUGINS = {
-  windows: ["browser-plugin", "claude", "clocks", "discord", "elgato-lights", "intellij", "obs", "streamlabs", "vlc", "voicemod", "vscode", "weather", "win-tools", "zoom"],
-  macos: ["browser-plugin", "claude", "clocks", "discord", "elgato-lights", "intellij", "mac-tools", "obs", "streamlabs", "vlc", "voicemod", "vscode", "weather", "zoom"],
+  windows: ["browser-plugin", "claude", "clocks", "discord", "elgato-lights", "intellij", "obs", "spotify", "streamlabs", "vlc", "voicemod", "vscode", "weather", "win-tools", "zoom"],
+  macos: ["browser-plugin", "claude", "clocks", "discord", "elgato-lights", "intellij", "mac-tools", "obs", "spotify", "streamlabs", "vlc", "voicemod", "vscode", "weather", "zoom"],
 };
 
 /** index.json: { plugins: { "<dir>": { version, name, summary, tags, featured, sort } } } */

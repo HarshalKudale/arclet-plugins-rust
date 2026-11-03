@@ -58,6 +58,7 @@ jobs:
         # App credentials baked in at build time (option_env!); unset ones leave the plugin asking for its own in setup.
         env:
           VOICEMOD_CLIENT_KEY: ${{ vars.VOICEMOD_CLIENT_KEY }}
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
         run: |
           for d in ${{ matrix.plugins }}; do
             (cd "$d" && knobdeck-plugin build && knobdeck-plugin package)
