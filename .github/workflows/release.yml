@@ -4,11 +4,14 @@
 # plugin: the ones that did not change are copied over from the previous release (scripts/registry.mjs).
 # Each plugin ships as <dir>_<os>_<version>.knobdeck (plus its readme; icons are hot-linked from the repo), and the release has one
 # registry.json describing them all; the website repo pulls that on its own schedule. Pull requests only build.
+# Running it by hand (Actions > release > Run workflow) rebuilds and republishes every plugin at its current
+# version, e.g. after changing a build-time variable such as a token URL.
 name: release
 on:
   push:
     branches: [master]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: write
 concurrency:
@@ -33,7 +36,9 @@ jobs:
           if [ -n "$prev" ]; then gh release download "$prev" -p registry.json -D prev || true; fi
           if [ ! -f prev/registry.json ]; then prev=""; fi
           echo "prev=$prev" >> "$GITHUB_OUTPUT"
-          echo "matrix=$(node scripts/plan.mjs prev/registry.json)" >> "$GITHUB_OUTPUT"
+          # A manual run plans against no previous registry, so every plugin is built.
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then reg=none; else reg=prev/registry.json; fi
+          echo "matrix=$(node scripts/plan.mjs $reg)" >> "$GITHUB_OUTPUT"
           echo "tag=v$(date -u +%Y.%m.%d-%H%M)" >> "$GITHUB_OUTPUT"
   build:
     needs: plan
@@ -72,7 +77,7 @@ jobs:
         with: { name: "bundles-${{ matrix.name }}", path: "out/*" }
   publish:
     needs: [plan, build]
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
