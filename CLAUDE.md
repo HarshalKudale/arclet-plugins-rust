@@ -37,7 +37,7 @@ Prefer, in this order:
    - use the `mod` token (⌘ on macOS, Ctrl on Windows) for cross-platform app shortcuts.
 
 Keystrokes are fine when the action *is* typing (custom keybind actions the user configures, or
-text the plugin must enter, such as Claude's `/rc`), and for in-app shortcuts sent to an app that
+text the plugin must enter), and for in-app shortcuts sent to an app that
 offers no other interface (browser tab shortcuts in Firefox/Zen).
 
 When reviewing or adding an action, check it against this rule and mention any keystroke that
@@ -54,7 +54,7 @@ Current decisions (keep this list up to date):
 | mac-tools | Dock (`CoreDockSendNotification`), `SACLockScreenImmediate`, Text Input Sources, Accessibility (windows, hide, Edit ▸ Paste), Screenshot app | Spaces ←/→ and Spotlight (no API; the user's configured system hotkey is posted), Force Quit ⌥⌘Esc (no API; reserved by loginwindow), ⌘V only for apps without a Paste menu item; Text Snippet types its text (text entry) |
 | win-tools | Win32 (windows, audio sessions and endpoints, `LockWorkStation`), undocumented `IPolicyConfig` for the default audio device (no public API; unchanged since Windows 7), `ShellExecuteW` for Task View / Show Desktop / Run (`shell:::{CLSID}`), `ms-screenclip:`, `ms-settings:`, Explorer, Task Manager | virtual desktops (no public API), Emoji Win+. (no API), Ctrl+V for clipboard history and Text Snippet paste mode (no app-independent paste call); Text Snippet types its text (text entry) |
 | browser-plugin | macOS Chromium (Chrome/Edge/Brave): AppleScript for tabs, navigation, windows, incognito, history/downloads/bookmarks pages; URLs via `open -a` / the browser exe | Firefox/Zen (no scripting interface), all browsers on Windows (no control interface without a debug flag), and page commands with no scripting equivalent (find, print, save, zoom, hard reload, reopen tab, full screen) |
-| claude | session files, process tree, Terminal/iTerm AppleScript for tab focus | typing `/rc` (text entry; the session socket has no Remote Control command) |
+| ai-stats | providers' usage endpoints, local transcripts | none |
 
 ## Rule 2: both OSes stay working
 
@@ -62,7 +62,7 @@ Current decisions (keep this list up to date):
 - To ship a plugin, bump `version` in its `Cargo.toml` and in `index.json` (CI fails if they disagree) and merge to master; CI builds only plugins whose `index.json` version differs from the previous release, copies the rest over from it and publishes one release holding every plugin (see `.github/workflows/release.yml`).
 
 - A plugin that runs on both OSes keeps one action set; OS differences live behind one `cfg` seam
-  per concern (e.g. `claude/src/win.rs` / `mac.rs` behind `mod os`).
+  per concern (e.g. `win-tools`-style `win.rs` / `mac.rs` behind `mod os`).
 - An OS-only plugin or action declares `.platforms(&["windows"])` / `.platforms(&["macos"])`.
   `win-tools` is Windows-only and `mac-tools` is its macOS counterpart.
 - Don't regress Windows while adding macOS support. Before finishing, run
