@@ -1,5 +1,15 @@
 {
   "plugins": {
+    "ai-stats": {
+      "version": "2.0.0",
+      "name": "AI Stats",
+      "summary": "Claude and Codex plan limits and 30-day token usage.",
+      "tags": [
+        "Developer tools",
+        "AI"
+      ],
+      "sort": 90
+    },
     "browser-plugin": {
       "version": "1.0.1",
       "name": "Browser Controls",
@@ -9,16 +19,6 @@
         "Automation"
       ],
       "sort": 50
-    },
-    "claude": {
-      "version": "1.0.0",
-      "name": "Claude Code",
-      "summary": "Running Claude Code sessions, usage and Remote Control.",
-      "tags": [
-        "Developer tools",
-        "AI"
-      ],
-      "sort": 90
     },
     "clocks": {
       "version": "1.0.0",

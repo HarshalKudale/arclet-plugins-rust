@@ -18,7 +18,7 @@ Every cross-platform plugin ships as two packages (`<id>-windows`, `<id>-macos`)
 | [zoom](./zoom) | Zoom meeting controls via the local API | Windows, macOS |
 | [win-tools](./win-tools) | Window management, per-app volume, clipboard history (`windows` crate) | Windows |
 | [mac-tools](./mac-tools) | Window management (Accessibility API), window switcher, Spaces/system shortcuts, stats, audio devices + mic mute, clipboard history | macOS |
-| [claude](./claude) | Running Claude Code sessions (status dots, window/tab switching), Remote Control, usage, recent sessions — read-only, no prompts | Windows, macOS |
+| [ai-stats](./ai-stats) | Claude and Codex plan limits (5 h / weekly gauges) and 30-day token usage, from the CLIs' local logins and transcripts | Windows, macOS |
 | [elgato-lights](./elgato-lights) | Key Light, Ring Light and Light Strip over their local HTTP API, found by mDNS | Windows, macOS |
 | [weather](./weather) | Current weather, 7-day and hourly forecast, air quality (Open-Meteo, no key) | Windows, macOS |
 | [clocks](./clocks) | Clock for any time zone, world clock wheel, countdown timer, stopwatch | Windows, macOS |
