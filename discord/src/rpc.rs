@@ -47,21 +47,27 @@ mod conn {
     use std::fs::{File, OpenOptions};
     use std::io::{self, Read, Write};
     use std::os::windows::io::AsRawHandle;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
 
     extern "system" {
         fn PeekNamedPipe(h: *mut core::ffi::c_void, buf: *mut core::ffi::c_void, size: u32, read: *mut u32, avail: *mut u32, left: *mut u32) -> i32;
     }
 
-    pub struct Conn(File);
+    /// The flag is shared by clones so `shutdown` stops the reader's poll loop;
+    /// without it a failed connect leaks the pipe handle and its reader thread.
+    pub struct Conn(File, Arc<AtomicBool>);
 
     impl Conn {
         pub fn open(id: u32) -> io::Result<Conn> {
-            OpenOptions::new().read(true).write(true).open(format!("\\\\.\\pipe\\discord-ipc-{id}")).map(Conn)
+            OpenOptions::new().read(true).write(true).open(format!("\\\\.\\pipe\\discord-ipc-{id}")).map(|f| Conn(f, Arc::default()))
         }
         pub fn try_clone(&self) -> io::Result<Conn> {
-            self.0.try_clone().map(Conn)
+            self.0.try_clone().map(|f| Conn(f, self.1.clone()))
         }
-        pub fn shutdown(&self) {}
+        pub fn shutdown(&self) {
+            self.1.store(true, Ordering::SeqCst);
+        }
     }
 
     impl Write for Conn {
@@ -80,6 +86,9 @@ mod conn {
         fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
             let mut idle_polls = 0u32;
             loop {
+                if self.1.load(Ordering::SeqCst) {
+                    return Ok(0);
+                }
                 let mut avail = 0u32;
                 let ok = unsafe { PeekNamedPipe(self.0.as_raw_handle() as *mut _, std::ptr::null_mut(), 0, std::ptr::null_mut(), &mut avail, std::ptr::null_mut()) };
                 if ok == 0 {
@@ -227,7 +236,10 @@ impl Rpc {
             r.read_loop(&mut reader);
             r.on_closed();
         });
-        ready_rx.recv_timeout(Duration::from_secs(10)).map_err(|_| RpcError::conn("RPC_CONNECTION_TIMEOUT"))?;
+        if ready_rx.recv_timeout(Duration::from_secs(10)).is_err() {
+            rpc.close(); // stops the reader thread and frees the pipe
+            return Err(RpcError::conn("RPC_CONNECTION_TIMEOUT"));
+        }
         Ok(rpc)
     }
 
