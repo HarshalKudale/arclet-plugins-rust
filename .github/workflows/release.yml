@@ -50,6 +50,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        # macOS plugins ship as universal binaries (knobdeck-plugin build lipos both).
+        with:
+          targets: ${{ matrix.name == 'macos' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
       - uses: Swatinem/rust-cache@v2
       - name: Install knobdeck-plugin
         run: cargo install --git https://github.com/HarshalKudale/knobdeck-sdk --bin knobdeck-plugin --locked
