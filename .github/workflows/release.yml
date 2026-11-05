@@ -2,6 +2,7 @@
 # the plugins whose index.json version changed (scripts/plan.mjs), each on its own OS, and publishes a GitHub
 # Release tagged with the UTC date and time (v2026.11.02-2341). The release always holds every
 # plugin: the ones that did not change are copied over from the previous release (scripts/registry.mjs).
+# Linux packages build on ubuntu-22.04 (glibc 2.35) so they run on Debian 12+, Ubuntu 22.04+ and Arch.
 # Each plugin ships as <dir>_<os>_<version>.knobdeck (plus its readme; icons are hot-linked from the repo), and the release has one
 # registry.json describing them all; the website repo pulls that on its own schedule. Pull requests only build.
 # Running it by hand (Actions > release > Run workflow) rebuilds and republishes every plugin at its current
@@ -54,6 +55,10 @@ jobs:
         with:
           targets: ${{ matrix.name == 'macos' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
       - uses: Swatinem/rust-cache@v2
+      # knobdeck-plugin packages with bsdtar; Ubuntu's tar is GNU tar, which can't write zip.
+      - name: Linux packaging tools
+        if: matrix.name == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools
       - name: Install knobdeck-plugin
         run: cargo install --git https://github.com/HarshalKudale/knobdeck-sdk --bin knobdeck-plugin --locked
       - name: Discord build-time settings

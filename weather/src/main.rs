@@ -140,7 +140,7 @@ fn read(inputs: &Value) -> Result<(Place, Value)> {
 }
 
 fn main() {
-    Plugin::new(if cfg!(target_os = "macos") { "weather-macos" } else { "weather-windows" }, "Weather")
+    Plugin::new(&format!("weather-{}", std::env::consts::OS), "Weather")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

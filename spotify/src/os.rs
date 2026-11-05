@@ -1,5 +1,7 @@
 //! Basic playback without an account or Premium, through the OS: Windows' system media controls
-//! (SMTC, the same session the volume flyout shows) or Spotify's AppleScript dictionary on macOS.
+//! (SMTC, the same session the volume flyout shows), Spotify's AppleScript dictionary on macOS, or
+//! MPRIS on Linux (the D-Bus media interface the Spotify client exports, which GNOME's and
+//! Plasma's media controls use too).
 
 pub struct NowPlaying {
     pub title: String,
@@ -95,3 +97,62 @@ mod imp {
     }
 }
 
+#[cfg(target_os = "linux")]
+mod imp {
+    use super::NowPlaying;
+    use knobdeck_sdk::{Error, Result};
+    use linux_desktop::bus;
+    use std::collections::HashMap;
+    use zbus::zvariant::OwnedValue;
+
+    const PATH: &str = "/org/mpris/MediaPlayer2";
+    const PLAYER: &str = "org.mpris.MediaPlayer2.Player";
+
+    /// Spotify's MPRIS name: `org.mpris.MediaPlayer2.spotify` (deb, Snap and Flatpak builds alike;
+    /// a second instance adds `.instance<pid>`).
+    fn player() -> Result<String> {
+        let mut names = bus::session_names("org.mpris.MediaPlayer2.spotify");
+        names.sort();
+        names.into_iter().next().ok_or_else(|| Error::msg("Spotify is not open"))
+    }
+
+    fn call(method: &str) -> Result<()> {
+        bus::call0(&bus::session()?, &player()?, PATH, PLAYER, method, &())
+    }
+
+    pub fn play_pause() -> Result<()> {
+        call("PlayPause")
+    }
+    pub fn next() -> Result<()> {
+        call("Next")
+    }
+    pub fn previous() -> Result<()> {
+        call("Previous")
+    }
+
+    pub fn now_playing() -> Result<NowPlaying> {
+        now_playing_of(&player()?)
+    }
+
+    fn now_playing_of(name: &str) -> Result<NowPlaying> {
+        let (conn, name) = (bus::session()?, name);
+        let meta: HashMap<String, OwnedValue> = bus::get(&conn, &name, PATH, PLAYER, "Metadata")?;
+        let status: String = bus::get(&conn, &name, PATH, PLAYER, "PlaybackStatus")?;
+        let text = |k: &str| meta.get(k).and_then(|v| v.try_clone().ok()).and_then(|v| String::try_from(v).ok()).unwrap_or_default();
+        let artist = meta.get("xesam:artist").and_then(|v| v.try_clone().ok()).and_then(|v| Vec::<String>::try_from(v).ok()).map(|a| a.join(", ")).unwrap_or_default();
+        Ok(NowPlaying { title: text("xesam:title"), artist, playing: status == "Playing" })
+    }
+
+    /// MPRIS players on the session bus (for tests: the bus itself works).
+    #[cfg(test)]
+    pub fn player_count() -> usize {
+        bus::session_names("org.mpris.MediaPlayer2.").len()
+    }
+
+    /// Decodes any running player's metadata the way Spotify's is decoded (read-only).
+    #[cfg(test)]
+    pub fn any_player_now_playing() -> Option<(String, Result<NowPlaying>)> {
+        let name = bus::session_names("org.mpris.MediaPlayer2.").into_iter().next()?;
+        Some((name.clone(), now_playing_of(&name)))
+    }
+}

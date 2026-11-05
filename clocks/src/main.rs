@@ -165,7 +165,7 @@ fn show(ctx: &Ctx, v: Visual) {
 }
 
 fn main() {
-    Plugin::new(if cfg!(target_os = "macos") { "clocks-macos" } else { "clocks-windows" }, "Clocks")
+    Plugin::new(&format!("clocks-{}", std::env::consts::OS), "Clocks")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

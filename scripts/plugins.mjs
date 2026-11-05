@@ -5,6 +5,9 @@ import { readFileSync } from "node:fs";
 export const OS_PLUGINS = {
   windows: ["ai-stats", "browser-plugin", "clocks", "discord", "elgato-lights", "intellij", "obs", "spotify", "streamlabs", "twitch", "vlc", "voicemod", "vscode", "weather", "win-tools", "youtube", "zoom"],
   macos: ["ai-stats", "browser-plugin", "clocks", "discord", "elgato-lights", "intellij", "mac-tools", "obs", "spotify", "streamlabs", "twitch", "vlc", "voicemod", "vscode", "weather", "youtube", "zoom"],
+  // Only apps with an official Linux build (Streamlabs Desktop and Voicemod have none; Zoom's
+  // local meeting API isn't documented for its Linux client). Debian/Ubuntu and Arch; GNOME and KDE.
+  linux: ["ai-stats", "browser-plugin", "clocks", "discord", "elgato-lights", "intellij", "linux-tools", "obs", "spotify", "twitch", "vlc", "vscode", "weather", "youtube"],
 };
 
 /** index.json: { plugins: { "<dir>": { version, name, summary, tags, featured, sort } } } */

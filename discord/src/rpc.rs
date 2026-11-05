@@ -136,6 +136,12 @@ mod conn {
         let mut dirs: Vec<String> = ["XDG_RUNTIME_DIR", "TMPDIR", "TMP", "TEMP"].iter().filter_map(|k| std::env::var(k).ok()).filter(|d| !d.is_empty()).collect();
         #[cfg(target_os = "macos")]
         dirs.extend(darwin_user_temp_dir());
+        // Linux: Discord's Flatpak and Snap builds put the socket in their sandbox's runtime dir.
+        #[cfg(target_os = "linux")]
+        if let Some(run) = std::env::var("XDG_RUNTIME_DIR").ok().filter(|d| !d.is_empty()) {
+            let run = run.trim_end_matches('/');
+            dirs.extend([format!("{run}/app/com.discordapp.Discord"), format!("{run}/snap.discord")]);
+        }
         dirs.push("/tmp".into());
         let mut seen = Vec::new();
         dirs.retain(|d| {
@@ -384,6 +390,16 @@ mod tests {
         let err = rpc.request("GET_VOICE_SETTINGS", Value::Null).unwrap_err();
         assert!(err.code.is_some(), "expected a Discord error code, got {err}");
         rpc.close();
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn linux_socket_dirs_start_with_runtime_dir() {
+        let Ok(run) = std::env::var("XDG_RUNTIME_DIR") else { return };
+        let dirs = conn::socket_dirs();
+        assert_eq!(dirs.first().map(|d| d.trim_end_matches('/')), Some(run.trim_end_matches('/')));
+        assert!(dirs.iter().any(|d| d.ends_with("/app/com.discordapp.Discord")), "{dirs:?}");
+        assert_eq!(dirs.last().map(String::as_str), Some("/tmp"));
     }
 
     #[cfg(target_os = "macos")]

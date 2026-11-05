@@ -42,6 +42,21 @@ fn label_for(browser: &str) -> &'static str {
 
 fn activate_browser(browser: &str) -> Result {
     let exe = ensure_executable(browser)?;
+    // KDE Plasma / GNOME: focus through the compositor (works for Wayland windows, which the
+    // host can only reach on Hyprland and X11). Other desktops fall through to the host.
+    #[cfg(target_os = "linux")]
+    {
+        let key = if KEYS.contains(&browser) { Some(browser) } else { detect_key(&Value::String(browser.into())) };
+        if let Some(key) = key {
+            if linux_desktop::desktop() != linux_desktop::Desktop::Other {
+                return match linux_desktop::wm::activate_app(browsers::window_classes(key)) {
+                    Ok(true) => Ok(()),
+                    Ok(false) => Err(Error::msg(format!("{} window is not open", label_for(browser)))),
+                    Err(e) => Err(e),
+                };
+            }
+        }
+    }
     if !focus_app(&exe)? {
         return Err(Error::msg(format!("{} window is not open", label_for(browser))));
     }
@@ -78,15 +93,31 @@ fn open_in_browser(browser: &str, url: &str) -> Result {
         cmd
     };
     // macOS: `exe` is a `.app` bundle; `open -a` launches it or hands the URL to the running one.
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
     let mut cmd = {
         let mut cmd = Command::new("/usr/bin/open");
         cmd.arg("-a").arg(exe).arg(target);
         cmd
     };
+    // Linux: the browser's own program (it hands the URL to a running instance), or its desktop
+    // entry through `gio launch` when only that was found. Own process group, so the browser
+    // outlives the plugin.
+    #[cfg(target_os = "linux")]
+    let mut cmd = {
+        use std::os::unix::process::CommandExt;
+        let mut cmd = if exe.ends_with(".desktop") {
+            let mut c = Command::new("gio");
+            c.arg("launch").arg(&exe);
+            c
+        } else {
+            Command::new(&exe)
+        };
+        cmd.arg(target).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).process_group(0);
+        cmd
+    };
     let mut child = cmd.spawn()?;
-    // `open` exits at once; reap it so it doesn't linger as a zombie. On Windows the
-    // browser itself is the child and is intentionally not waited on.
+    // Reap the child so it doesn't linger as a zombie (`open`/`gio` exit at once; a browser
+    // started fresh runs until closed). On Windows it is intentionally not waited on.
     #[cfg(not(windows))]
     std::thread::spawn(move || {
         let _ = child.wait();
@@ -225,18 +256,18 @@ fn link_wheel(id: &str, label: &str, icon: &str, child_prefix: &'static str, chi
         })
 }
 
-/// `windows` on Windows, `mac` on macOS.
+/// `windows` on Windows and Linux (browsers use the same chords on both), `mac` on macOS.
 const fn per_os(windows: &'static str, mac: &'static str) -> &'static str {
-    if cfg!(windows) {
-        windows
-    } else {
+    if cfg!(target_os = "macos") {
         mac
+    } else {
+        windows
     }
 }
 
-/// Windows chord (same in every browser), or the macOS chord for the selected browser's family.
+/// Windows/Linux chord (same in every browser), or the macOS chord for the selected browser's family.
 fn per_family(inputs: &Value, windows: &'static str, mac_chromium: &'static str, mac_firefox: &'static str) -> Result<&'static str> {
-    if cfg!(windows) {
+    if !cfg!(target_os = "macos") {
         return Ok(windows);
     }
     Ok(match meta(browser_key(inputs)?).family {
@@ -250,11 +281,11 @@ const NEXT_TAB: &str = per_os("ctrl pgdn", "ctrl tab");
 const PREV_TAB: &str = per_os("ctrl pgup", "ctrl shift tab");
 
 fn main() {
-    let mut plugin = Plugin::new(if cfg!(target_os = "macos") { "browser-plugin-macos" } else { "browser-plugin-windows" }, "BrowserPlugin")
+    let mut plugin = Plugin::new(&format!("browser-plugin-{}", std::env::consts::OS), "BrowserPlugin")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
-        .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows and macOS.")
+        .description("Shared Chrome, Edge, Brave, Firefox and Zen controls, wheels, and zoom actions on Windows, macOS and Linux.")
         .icon("globe")
         .ack_timeout_ms(5000);
 

@@ -41,7 +41,7 @@ fn playing_label(n: &os::NowPlaying) -> String {
 
 fn main() {
     load_env();
-    Plugin::new(if cfg!(target_os = "macos") { "spotify-macos" } else { "spotify-windows" }, "Spotify")
+    Plugin::new(&format!("spotify-{}", std::env::consts::OS), "Spotify")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
@@ -196,6 +196,18 @@ mod tests {
         // Read-only: asks Windows for its media sessions; Spotify itself may be closed.
         eprintln!("media sessions: {}", super::os::session_count());
         assert!(matches!(super::os::now_playing(), Ok(_) | Err(_)));
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn mpris_answers() {
+        // Read-only: lists MPRIS players; Spotify itself may be closed.
+        eprintln!("mpris players: {}", super::os::player_count());
+        assert!(matches!(super::os::now_playing(), Ok(_) | Err(_)));
+        if let Some((name, n)) = super::os::any_player_now_playing() {
+            let n = n.unwrap();
+            eprintln!("{name}: {:?} — {:?} playing={}", n.title, n.artist, n.playing);
+        }
     }
 
     #[test]

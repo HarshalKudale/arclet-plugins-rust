@@ -85,7 +85,7 @@ fn main() {
         // Warm the list so the first press does not wait for discovery.
         std::thread::spawn(refresh_lights);
     }
-    Plugin::new(if cfg!(target_os = "macos") { "elgato-lights-macos" } else { "elgato-lights-windows" }, "Elgato Lights")
+    Plugin::new(&format!("elgato-lights-{}", std::env::consts::OS), "Elgato Lights")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

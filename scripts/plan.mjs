@@ -9,7 +9,8 @@ import { OS_PLUGINS, findEntry, readIndex } from "./plugins.mjs";
 const prevPath = process.argv[2];
 const prev = prevPath && existsSync(prevPath) ? JSON.parse(readFileSync(prevPath, "utf8")).plugins : [];
 const index = readIndex();
-const RUNNER = { windows: "windows-latest", macos: "macos-latest" };
+// Linux builds on the oldest supported Ubuntu so the binaries' glibc (2.35) also runs on Debian 12.
+const RUNNER = { windows: "windows-latest", macos: "macos-latest", linux: "ubuntu-22.04" };
 
 // The binary reports its Cargo.toml version, so the two must agree.
 for (const dir of new Set(Object.values(OS_PLUGINS).flat())) {

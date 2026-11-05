@@ -48,7 +48,7 @@ fn viewers_label() -> Result<String> {
 
 fn main() {
     load_env();
-    Plugin::new(if cfg!(target_os = "macos") { "twitch-macos" } else { "twitch-windows" }, "Twitch")
+    Plugin::new(&format!("twitch-{}", std::env::consts::OS), "Twitch")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

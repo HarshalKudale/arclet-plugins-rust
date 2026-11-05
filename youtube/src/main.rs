@@ -23,7 +23,7 @@ fn viewers_label() -> Result<String> {
 
 fn main() {
     load_env();
-    Plugin::new(if cfg!(target_os = "macos") { "youtube-macos" } else { "youtube-windows" }, "YouTube")
+    Plugin::new(&format!("youtube-{}", std::env::consts::OS), "YouTube")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

@@ -130,7 +130,7 @@ const SIMPLE: &[(&str, &str, &str, &str)] = &[
 
 fn main() {
     load_env();
-    let mut plugin = Plugin::new(if cfg!(target_os = "macos") { "vscode-macos" } else { "vscode-windows" }, "VS Code")
+    let mut plugin = Plugin::new(&format!("vscode-{}", std::env::consts::OS), "VS Code")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
