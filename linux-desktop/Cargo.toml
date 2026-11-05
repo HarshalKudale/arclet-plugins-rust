@@ -1,0 +1,16 @@
+[package]
+name = "linux-desktop"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "KDE Plasma / GNOME window bridge and freedesktop helpers shared by the Linux plugins (not a plugin)."
+
+[dependencies]
+knobdeck-sdk.workspace = true
+base64.workspace = true
+
+serde = "1"
+serde_json.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus.workspace = true
