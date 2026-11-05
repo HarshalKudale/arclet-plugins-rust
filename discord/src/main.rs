@@ -437,7 +437,7 @@ fn select_text_channel(c: &Rpc, channel_id: &str, guild_id: &str) -> Result {
 }
 
 fn main() {
-    let plugin = Plugin::new(if cfg!(target_os = "macos") { "discord-macos" } else { "discord-windows" }, "Discord")
+    let plugin = Plugin::new(&format!("discord-{}", std::env::consts::OS), "Discord")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

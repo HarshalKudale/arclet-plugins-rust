@@ -350,7 +350,7 @@ fn main() {
         std::thread::spawn(move || obs_ws::run(host, port, password, sync_obs_state, on_event, on_closed));
     }
 
-    Plugin::new(if cfg!(target_os = "macos") { "obs-macos" } else { "obs-windows" }, "OBS Studio")
+    Plugin::new(&format!("obs-{}", std::env::consts::OS), "OBS Studio")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")

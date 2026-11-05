@@ -118,7 +118,7 @@ fn command_button(id: &str, label: &str, icon: &str, command: &'static str, para
 
 fn main() {
     load_env();
-    Plugin::new(if cfg!(target_os = "macos") { "vlc-macos" } else { "vlc-windows" }, "VLC")
+    Plugin::new(&format!("vlc-{}", std::env::consts::OS), "VLC")
         .version(env!("CARGO_PKG_VERSION"))
         .platforms(&[std::env::consts::OS]) // one package per OS
         .author("KnobDeck")
