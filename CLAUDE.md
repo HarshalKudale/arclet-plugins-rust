@@ -6,7 +6,7 @@ SDK repo through git (commit and push); plugins depend on its GitHub master, nev
 
 ## Rule 1: keystrokes are the last resort
 
-Applies to every plugin and to KnobDeck's built-in actions (`../knobdeck/CLAUDE.md` has the host copy).
+Applies to every plugin and to KnobDeck's built-in actions (`../Knobdeck/CLAUDE.md` has the host copy).
 Do **not** implement an action by sending a keyboard shortcut (`send_keys`, `ctx.send_keys`,
 `keys_button`, posting CGEvents/SendInput) when a stable OS or app route exists. Shortcuts are
 fragile:
